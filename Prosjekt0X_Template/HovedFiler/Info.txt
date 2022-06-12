@@ -1,0 +1,27 @@
+Packages required to be installed
+
+pip3 install mplcursors
+
+
+
+
+- Configs.limitMeasurements = False 
+	Siden Ev3 har mindre minne enn PC-en vil den kræsje dersom listene vokser uten noen limitasjon (fleste tilfeller i oblig krever ikke dette)
+	Variabelen satt til True vil gjøre at hver liste ikke overskrider 1000 elementer. Da kan du kjøre ekseperimentet i lang tid.
+	VELDIG VIKTIG!: Ikke sett til True når du driver med FIR-filtrering der "m" er større enn 1000. Alle beregninger som krever mer enn 1000 målinger 
+	skal ikke ha denne satt til True.
+	
+
+
+- Configs.plotMethod = 3
+	Gir brukeren mulighet til å velge forskjellige plottemetoder basert på behov
+	Prøv gjerne alle og se hva dine behov er. Raskere response gir mindre interaktivitet. 
+
+	Default plotting: 	0 	(demo for hva som er problemet. Plotter samme graf oppå hverandre og er veldig treg)
+	Extended plotting: 	1	(oppdatert med blitting på kurven. Litt raskere enn vanlig plotting)
+	Hybrid blit:		2	(rask, men med kompromiss. Vil øke aksene med dobbelt når kurven går over grensen | Viser fortsatt akseverdier)
+	Full blit:			3	(veldig rask respons, men viser ingen akseverdier | lagt til visualisering av x og y-verdi som kompromiss)
+
+	Anbefaler 3 (veldig rask respons og godt inntrykk av hvordan kurven er mens det plottes)
+	Når programmet er ferdig, plottes dette opp igjen og interaktivitet legges inn.
+	Anbefales veldig sterkt å plotte data i matlab som har overlegen interaktivitet
