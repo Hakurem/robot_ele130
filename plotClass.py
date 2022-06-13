@@ -6,12 +6,10 @@ for b in backends:
 		matplotlib.use(b)
 		import matplotlib.pyplot as plt
 		from matplotlib.animation import FuncAnimation
-
 		if b == "macosx" and plotMethod == 2:
 			print("macosx backend støtter ikke plottemetode 2!!!")
 		print(f"Bruker backend {b} for plotting")
 		break
-		
 	except:
 		pass
 
@@ -174,9 +172,6 @@ class PlotObject:
 
 	def live(self,i): # i is required internally (removing this causes bugs when resizing window)
 
-		if i == 50:
-			self.stopPlot()
-			return *self.figure_list, *self.x_label_list, *self.y_label_list 
 		"""
 		try:
 			bytesData = next(self.socketData)
@@ -218,12 +213,14 @@ class PlotObject:
 				elif rowOfData == b"end":
 					print("Recieved end signal")
 					self.stopPlot()
-					return
+					break
+
 				try:
 					rowOfData = json.loads(rowOfData)
 					for key in rowOfData:
-						self.Data[key].append(rowOfData[key])
 						
+
+						self.Data[key].append(rowOfData[key])
 						if plotMethod == 2:				
 							if not key in self.y_limits:
 								self.y_limits[key] = [0,0]
@@ -253,19 +250,15 @@ class PlotObject:
 
 
 	def stopPlot(self):
-		
-		#self.livePlot.pause()
+		print("STOPPING NOW",flush=True)
 		# stop liveplot event
 		try:
+			self.livePlot.pause()
 			self.livePlot.event_source.stop()
 			self.livePlot._stop()
 		except Exception as e:
 			print(f"error when trying to stop plot event{e}",flush=True)
 			pass
-		
-
-		sleep(0.1)
-
 
 		# clear canvas  and redraw canvas
 		if plotMethod == 1:
@@ -481,27 +474,28 @@ class PlotObject:
 		subplot.legend(loc='upper left', frameon=False)
 
 	def startPlot(self):
-		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
-		plt.show()
-
 
 		def stopNow():
+			self.window.withdraw()
 			self.stopPlot()
 
-		window = tk.Tk()
-		window.title("EV3 Custom Stop")
-		window.config(bg='#567')
-		ws = window.winfo_screenwidth()
-		hs = window.winfo_screenheight()
+		self.window = tk.Tk()
+		self.window.title("EV3 Custom Stop")
+		self.window.config(bg='#567')
+		ws = self.window.winfo_screenwidth()
+		hs = self.window.winfo_screenheight()
 		w = 250
 		h = 250
 		x = ws - (w) 	#(ws/2) - (w/2)
 		y = hs/2 - h/2 #(hs/2) - (h/2)
-		window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-		button = tk.Button(window, text ="Stop Program!",command=stopNow)
+		self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+		button = tk.Button(self.window, text ="Stop Program!",command=stopNow)
 		button.config(font=("Consolas",15))
 		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
-		window.mainloop()
+
+		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
+		plt.show(block=False)
+		self.window.mainloop()
 	
 if __name__ == "__main__":
 	pass

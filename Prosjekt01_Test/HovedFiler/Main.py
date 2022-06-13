@@ -29,20 +29,21 @@ _g = Bunch()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
+
 # SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER og BEREGNINGER
 
 #++++++++++++++++++++++++++++++++++++++++++ Konfigurasjoner +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Configs.EV3_IP = "169.254.63.42"
-Configs.Online = True
+Configs.EV3_IP = "169.254.63.42"	# se ip-adressen på skjermen til ev3-roboten
+Configs.Online = True				# kjører du programmet uten robot, så er det Online=False
+Configs.runFromPC = True			# programmet kjøres fra PC (True) eller KUN fra Ev3-roboten (False) (Det vi kalte wired før)
+Configs.livePlot = True				# lar deg plotte live. Kan sette false om du ønsker mindre tids-skritt uten å måtte ta av ledning
+Configs.plotMethod = 2				# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
+Configs.desimaler = 2 				# sett antall desimaler ved manuell markering av (x,y) verdi etter plott 
 
 Configs.filenameMeas = "measurements.txt"
 Configs.filenameCalcOnline = "calculations.txt" 
 Configs.filenameCalcOffline = ".txt"  
 
-Configs.runFromPC = True	# programmet kjøres fra PC (True) eller KUN fra Ev3-roboten (False)
-Configs.livePlot = True		# lar deg plotte live. Kan sette false om du ønsker mindre tids-skritt uten å måtte ta av ledning
-Configs.plotMethod = 2		# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
-Configs.desimaler = 2 		# sett antall desimaler ved manuell markering av (x,y) verdi etter plott 
 Configs.limitMeasurements = False	# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -128,11 +129,11 @@ def setPorts(r, devices, port):
 
 
 # legg til målinger fra roboten inn i listene du ønsker
-# husk at målinger kommer fra avlesning av sensorene til roboten og ikke er beregninger
-# d: data  | "dict-objecktet" med dine dine lister som støtter kun punktum notasjon
-# r: robot | inneholder sensorer, motorer, forbindelser og diverse
+# husk at målinger kommer fra avlesning av sensorene til roboten (ikke beregninger)
+# d: data  | "data-objecktet" med dine dine lister som bruker punktum notasjon
+# r: robot | inneholder sensorer, motorer og diverse
 # _g: "globale" verdier | Du kan lagre initialverdier som kan brukes i mathcalculation
-# k: indeks som starter på 0 og øker [0,-->]
+# k: indeks som starter på 0 og øker [0,--> uendelig]
 # config: inneholder joystick målinger
 
 def addMeasurements(d,r,_g,k):
@@ -267,6 +268,10 @@ def writeCalcToFile(d,r,k):
 	r.calculations.write(streng)
 # --------------------------------------------------------
 
+
+
+
+
 # Kjører kun på PC-en i offline.
 # Leser gjennom filnameMeasurement og henter ut målinger.
 # Målingene beregnes og lagres i til fil
@@ -284,6 +289,8 @@ def writeOfflineCalc(d, lengde):
 #_______________________________________________________________________
 
 
+
+
 # Om du har satt True på runFromPC, livePlot og Online, så får du live målinger fra ROBOTEN til PC
 # vil være noe tregere pga pakking av data, konverteringer og sending fra EV3 til PC
 def SendLiveData(data,robot):
@@ -294,12 +301,10 @@ def SendLiveData(data,robot):
 		"Ts",
 		"Euler"
 	)
-
 	#++++++++++++++++++++++ sender over data til PC ++++++++++++++++++++++++++++++++++++++++
 	msg = json.dumps(LiveData) # serializing med json tar overraskende lang tid på roboten
 	robot.connection.send(bytes(msg, "utf-8") + b"?") # Sender målinger fra Ev3 til PC-en din
 	#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
 # Dersom nrows og ncols = 1, så har du bare ax.
 # Dersom enten nrows = 1 eller ncols = 1, så gis ax 1 argument som ax[0], ax[1], osv.
