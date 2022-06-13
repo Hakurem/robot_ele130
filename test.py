@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from multiprocessing import Process, Queue
 import math
 from Main import d
@@ -5,6 +6,7 @@ from plotClass import PlotObject
 import socket
 from time import perf_counter, sleep
 import json
+
  
 
 class Bunch(dict):
@@ -69,7 +71,7 @@ def producer(signal_queue):
             print(f'noe gikk galt {e}')
             break
             
-        sleep(0.0001)
+        sleep(0.01)
         """
         dt = perf_counter()-dt_stamp
         dt_stamp = perf_counter()

@@ -1,10 +1,20 @@
-from time import perf_counter
+import matplotlib
+
+backends = ["Qt5Agg","Agg","TkAgg","macosx"]
+for b in backends:
+	try:
+		matplotlib.use(b)
+		print(f"Using backend {b} for plotting")
+	except ValueError:
+		pass
+
+
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from Main import d, plotMethod, desimaler
 import json
 from time import sleep
-import tkinter as Tk
+import tkinter as tk
 
 
 
@@ -22,6 +32,14 @@ except:
 
 #_______________________________________
 
+
+root = tk.Tk()
+screen_x = root.winfo_screenwidth()
+screen_y = root.winfo_screenheight()
+root.withdraw()
+
+
+
 class PlotObject:
 	def __init__(self, nrows, ncols, sharex=True):
 
@@ -32,11 +50,6 @@ class PlotObject:
 		self.counter = 0
 		
 		try:
-			root = Tk()
-			screen_x = root.winfo_screenwidth()
-			screen_y = root.winfo_screenheight()
-			root.withdraw()
-
 			thismanager = plt.get_current_fig_manager()
 			thismanager.window.wm_geometry(f"-{int(screen_x//2)}+0")
 		
@@ -356,7 +369,7 @@ class PlotObject:
 				self.Mapping[subplot][lineId] = {"line": line, "y_label": y_label}
 				self.figure_list.append(line)
 				self.y_label_list.append(y_label,)
-
+				
 		if line:
 			scale_X = 1.02
 			max_x = self.Data[xListName][-1] or 0.1
@@ -399,6 +412,11 @@ class PlotObject:
 				min_y += 1e-10
 				max_y -= 1e-10
 			dy = 0.1*(max_y-min_y)
+
+
+			#print(f"Y-limits {min_y} & {max_y}",flush=True)
+			#print(f"X-limits {self.Data[xListName][0]} & {scale_X*max_x}",flush=True)
+			#print("",flush=True)
 			#__________________________________________________________
 
 			dif = len(self.Data[xListName]) - len(self.Data[yListName])
@@ -441,7 +459,7 @@ class PlotObject:
 				linestyle=linestyle, 
 				linewidth=linewidth, 
 				marker=marker,
-				label= f"{yname}: {round(self.Data[yListName][-1],20)}"
+				label= f"{yname}: {round(self.Data[yListName][-1],2)}"
 			)
 		else:
 			subplot.plot(
@@ -451,7 +469,7 @@ class PlotObject:
 				linestyle=linestyle, 
 				linewidth=linewidth, 
 				marker=marker,
-				label= f"{yname}: {round(self.Data[yListName][-1],20)}"
+				label= f"{yname}: {round(self.Data[yListName][-1],2)}"
 			)
 
 		subplot.legend(loc='upper left', frameon=False)
