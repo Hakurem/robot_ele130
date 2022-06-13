@@ -10,8 +10,6 @@ import tkinter as tk
 import _thread
  
 
-
-
 class Bunch(dict):
     def __init__(self, *args, **kwds):
         super(Bunch, self).__init__(*args, **kwds)
@@ -64,7 +62,7 @@ def setup_socket(signal_queue):
 	connection, _ = sock.accept()
 	connection.send(b"ack")
 	
-	queue = multiprocessing.Manager().Queue() #
+	queue = Queue()
 	consumer = Process(target=QueueHandler, args = (queue,connection))
 	consumer.start()
 
