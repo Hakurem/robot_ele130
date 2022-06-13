@@ -4,14 +4,17 @@ backends = ["Qt5Agg","TkAgg","macosx"]
 for b in backends:
 	try:
 		matplotlib.use(b)
-		print(f"Bruker backend {b} for plotting")
+		import matplotlib.pyplot as plt
+		from matplotlib.animation import FuncAnimation
+
 		if b == "macosx" and plotMethod == 2:
 			print("macosx backend støtter ikke plottemetode 2!!!")
+		print(f"Bruker backend {b} for plotting")
 		break
+		
 	except:
 		pass
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+
 
 import json
 from time import sleep
