@@ -1,17 +1,18 @@
+from Main import d, plotMethod, desimaler
 import matplotlib
 backends = ["Qt5Agg","TkAgg","macosx"]
 for b in backends:
 	try:
 		matplotlib.use(b)
-		import matplotlib.pyplot as plt
-		from matplotlib.animation import FuncAnimation
-		print(f"Using backend {b} for plotting")
+		print(f"Bruker backend {b} for plotting")
+		if b == "macosx" and plotMethod == 2:
+			print("macosx backend støtter ikke plottemetode 2!!!")
 		break
 	except:
 		pass
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
-
-from Main import d, plotMethod, desimaler
 import json
 from time import sleep
 import tkinter as tk
@@ -169,6 +170,10 @@ class PlotObject:
 
 
 	def live(self,i): # i is required internally (removing this causes bugs when resizing window)
+
+		if i == 50:
+			self.stopPlot()
+			return *self.figure_list, *self.x_label_list, *self.y_label_list 
 		"""
 		try:
 			bytesData = next(self.socketData)
@@ -224,6 +229,7 @@ class PlotObject:
 							elif rowOfData[key] > self.y_limits[key][1]:
 								self.y_limits[key][1] = rowOfData[key]
 							#_________________________________
+					
 				except json.decoder.JSONDecodeError:
 					self.bytesData += rowOfData
 
@@ -245,6 +251,7 @@ class PlotObject:
 
 	def stopPlot(self):
 		
+		#self.livePlot.pause()
 		# stop liveplot event
 		try:
 			self.livePlot.event_source.stop()
@@ -265,10 +272,8 @@ class PlotObject:
 					subplot.get_legend().remove()
 					for line in subplot.get_lines():
 						line.remove()
-					
 			except Exception as e:
 				print(f'issues with stopping plot: {e}',flush=True)
-		
 		
 		# Remove labels and lines from our custom storage
 		for line in self.figure_list:
@@ -283,6 +288,8 @@ class PlotObject:
 		for ylabel in self.y_label_list:
 			ylabel.remove()
 		#_______________________________________________
+
+	
 
 		for lineInfo in self.lines.values():
 			subplot         = lineInfo["subplot"]    
@@ -324,10 +331,11 @@ class PlotObject:
 				subplot.tick_params(axis='x', colors='black') 
 				subplot.tick_params(axis='y', colors='black')
 
-		
 		if Interactivity:
 			crosshairs(xlabel="x",ylabel="y",decimals=desimaler) #it is important to call this last   
-		plt.show()
+		plt.pause(0)
+	
+
 		
 
 	# PLOTTING METHODS:
@@ -414,11 +422,6 @@ class PlotObject:
 			dy = 0.1*(max_y-min_y)
 
 
-			#print(f"Y-limits {min_y} & {max_y}",flush=True)
-			#print(f"X-limits {self.Data[xListName][0]} & {scale_X*max_x}",flush=True)
-			#print("",flush=True)
-			#__________________________________________________________
-
 			dif = len(self.Data[xListName]) - len(self.Data[yListName])
 			subplot.set_xlim(self.Data[xListName][0],scale_X*max_x) #set x limit of axis    
 			subplot.set_ylim(min_y-dy,max_y+dy)
@@ -475,7 +478,27 @@ class PlotObject:
 		subplot.legend(loc='upper left', frameon=False)
 
 	def startPlot(self):
-		print("CALL TO START",flush=True)
 		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
-		plt.show()  
+		plt.show()
+
+
+		def stopNow():
+			self.stopPlot()
+
+		window = tk.Tk()
+		window.title("EV3 Custom Stop")
+		window.config(bg='#567')
+		ws = window.winfo_screenwidth()
+		hs = window.winfo_screenheight()
+		w = 250
+		h = 250
+		x = ws - (w) 	#(ws/2) - (w/2)
+		y = hs/2 - h/2 #(hs/2) - (h/2)
+		window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+		button = tk.Button(window, text ="Stop Program!",command=stopNow)
+		button.config(font=("Consolas",15))
+		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
+		window.mainloop()
 	
+if __name__ == "__main__":
+	pass

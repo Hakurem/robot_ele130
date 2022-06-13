@@ -6,8 +6,10 @@ from plotClass import PlotObject
 import socket
 from time import perf_counter, sleep
 import json
+import tkinter as tk
+import _thread
 
- 
+
 
 class Bunch(dict):
     def __init__(self, *args, **kwds):
@@ -71,7 +73,7 @@ def producer(signal_queue):
             print(f'noe gikk galt {e}')
             break
             
-        sleep(0.01)
+        sleep(0.04)
         """
         dt = perf_counter()-dt_stamp
         dt_stamp = perf_counter()
@@ -85,16 +87,38 @@ def producer(signal_queue):
         
 
 
+def CustomStop():
+    pass
+	# def StopProgram():
+	# 	button.config(text="fix plot")
+	# 	#SEND STOP COMMAND TO ROBOT
+	# 	try:
+	# 		plt.stopPlot()
+	# 	except:
+	# 		pass
+
+	# window = tk.Tk()
+	# window.title("EV3 Custom Stop")
+	# window.config(bg='#567')
+	# ws = window.winfo_screenwidth()
+	# hs = window.winfo_screenheight()
+	# w = 250
+	# h = 250
+	# x = ws - (w) 	#(ws/2) - (w/2)
+	# y = hs/2 - h/2 #(hs/2) - (h/2)
+	# window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+	# button = tk.Button(window, text ="Stop Program!",command=StopProgram)
+	# button.config(font=("Consolas",15))
+	# button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
+	# window.mainloop()
+
 
 
 def main():
     signal_queue = Queue()
     p = Process(target=producer, args = (signal_queue,))
     p.start()
-
-    print("waiting for ready signal")
     signal_queue.get()
-    print("ok move on")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -111,8 +135,6 @@ def main():
     except socket.timeout:
         print("failed")
         exit()
-    
-    print("TO RUN PLOT",flush=True)
     runPlot(sock)
 
 
@@ -151,8 +173,8 @@ def runPlot(sock):
         yname			= "time step (s)"
     )
     #________________________________
-
-    print("start plot class",flush=True)
+    
+    #_thread.start_new_thread(CustomStop, (plt,))
     plt.startPlot()
 
 if __name__=="__main__":
