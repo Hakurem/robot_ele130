@@ -1,16 +1,16 @@
 import matplotlib
-
-backends = ["Qt5Agg","Agg","TkAgg","macosx"]
+backends = ["Qt5Agg","TkAgg","macosx"]
 for b in backends:
 	try:
 		matplotlib.use(b)
+		import matplotlib.pyplot as plt
+		from matplotlib.animation import FuncAnimation
 		print(f"Using backend {b} for plotting")
-	except ValueError:
+		break
+	except:
 		pass
 
 
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 from Main import d, plotMethod, desimaler
 import json
 from time import sleep
