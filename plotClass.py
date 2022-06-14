@@ -1,24 +1,28 @@
+
 from Main import d, plotMethod, desimaler
 import matplotlib
+import json
+import tkinter as tk
+
+# Qt5Agg er den ideelle på mac (veldig rask). 
+# TkAgg og macosx er ok backends, men macosx 
+# fungerer ikke med plottemetode 2 (macosx)
+
+# iterer gjennom backends og velger. Om ingen er tilstede brukes default
 backends = ["Qt5Agg","TkAgg","macosx"]
-chosen_backend = ""
-comment = ""
 for b in backends:
 	try:
 		matplotlib.use(b)
 		import matplotlib.pyplot as plt
 		from matplotlib.animation import FuncAnimation
-		if b == "macosx" and plotMethod == 2:
-			comment = "macosx backend støtter ikke plottemetode 2!"
-		chosen_backend = f"Bruker backend {b} for plotting"
 		break
 	except:
 		pass
 
-
-import json
-from time import sleep
-import tkinter as tk
+# Legger til en kommentar i output for informasjon om backend evt om plottemetode 2 støttes 
+chosen_backend = f"Bruker backend {matplotlib.get_backend().lower()} for plotting"
+if matplotlib.get_backend().lower() == "macosx" and plotMethod == 2:
+	comment = "macosx backend støtter ikke plottemetode 2!"
 
 
 
@@ -27,7 +31,7 @@ class Bunch(dict):
         super(Bunch, self).__init__(*args, **kwds)
         self.__dict__ = self
 
-# If we have installed reliability, use it
+# Bruk modulen til å velge datapunkter om den er installert
 Interactivity = True
 try:
 	from reliability.Other_functions import crosshairs
@@ -38,35 +42,41 @@ except:
 
 
 
-
+# Klassen som inneholder data og metoder til visualisering av plott
 class PlotObject:
 	def __init__(self, nrows, ncols, sharex=True):
 
-		print("\n___Status__for__plotting___")
+		print("\n___Status for plotting___",flush=True)
 		if chosen_backend:
-			print(chosen_backend)
-		if comment:
-			print(comment)
-		print("___________________________\n")
+			print(chosen_backend,flush=True)
+		try:
+			print(comment,flush=True)
+		except NameError:
+			pass
+		print("___________________________\n",flush=True)
 
 		self.window = tk.Tk()
-		screen_x = self.window.winfo_screenwidth()
-		screen_y = self.window.winfo_screenheight()
+		
 
 		self.nrows = nrows
 		self.ncols = ncols
 		self.fig, self.ax = plt.subplots(nrows, ncols, sharex=sharex)
 		self.counter = 0
 		
-		try:
-			thismanager = plt.get_current_fig_manager()
-			thismanager.window.wm_geometry(f"-{int(screen_x//2)}+0")
-		
-			self.fig.set_figheight(screen_y/100)
-			self.fig.set_figwidth(screen_x/96/2)
-		except:
-			#print('kan ikke endre posisjon av plotvindu på MAC',flush=True)
-			pass
+		# screen_x = self.window.winfo_screenwidth()
+		# screen_y = self.window.winfo_screenheight()
+		# print("\n___Status for skalering & posisjonering av stop-knapp_",flush=True)
+		# try:
+		# 	thismanager = plt.get_current_fig_manager()
+		# 	#mac bruker //1 mens windows //2
+		# 	thismanager.window.wm_geometry(f"-{int(screen_x//2)}+0")
+		# 	self.fig.set_figheight(screen_y/100)
+		# 	self.fig.set_figwidth(screen_x/96/2)
+		# 	print("status: ok",flush=True)
+		# except Exception as e:
+		# 	print(e,flush=True)
+		# 	print('kan ikke endre posisjon av plotvindu på MAC',flush=True)
+		# print("______________________________________________________\n",flush=True)
 		
 
 
@@ -110,8 +120,6 @@ class PlotObject:
 				"maxX": None,
 				"x_label": None,
 			}
-
-
 
 
 	def createlines(self, subplot, xListName,  yListName, **kwargs):
@@ -225,8 +233,6 @@ class PlotObject:
 				try:
 					rowOfData = json.loads(rowOfData)
 					for key in rowOfData:
-						
-
 						self.Data[key].append(rowOfData[key])
 						if plotMethod == 2:				
 							if not key in self.y_limits:
@@ -257,16 +263,14 @@ class PlotObject:
 
 
 	def stopPlot(self):
-
 		
 		# stop liveplot event
 		try:
 			self.livePlot.pause()
 			self.livePlot.event_source.stop()
 			self.livePlot._stop()
-			self.window.withdraw()
 		except Exception as e:
-			print(f"error when trying to stop plot event{e}",flush=True)
+			print(f"Error when trying to stop plot event (vanligvis ikke problem): {e}",flush=True)
 			pass
 
 		# clear canvas  and redraw canvas
@@ -329,7 +333,6 @@ class PlotObject:
 					marker=marker,
 					label= str(yname),
 				)
-				
 			
 			subplot.legend(loc='upper left', frameon=False)
 			if plotMethod == 2:
@@ -337,13 +340,16 @@ class PlotObject:
 				subplot.tick_params(axis='y', colors='black')
 
 		if Interactivity:
-			crosshairs(xlabel="x",ylabel="y",decimals=desimaler) #it is important to call this last   
-		plt.pause(0)
+			crosshairs(xlabel="x",ylabel="y",decimals=desimaler) #it is important to call this last
+
+		self.window.withdraw()
+		plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
 	
 
 		
 
-	# PLOTTING METHODS:
+	# plotte-metode 2: Veldig rask, men ulempen er at akseverdier ikke vises
+	# har lagt til labels for å få et bedre inntrykk av x og y verdier 
 	def Blitting(self, lineInfo):
 		lineId          = lineInfo["lineId"]
 		subplot         = lineInfo["subplot"]    
@@ -407,7 +413,6 @@ class PlotObject:
 			
 
 			# Handle axes limits for animation
-			
 			if min_y < self.Mapping[subplot]["min"]:
 				self.Mapping[subplot]["min"] = min_y
 			else:
@@ -443,7 +448,7 @@ class PlotObject:
 			y_label.set_x(self.Data[xListName][-1])
 			y_label.set_y(self.Data[yListName][-1])
 
-
+	# Litt tregere plottemetode, men vi får vist frem akseverdier
 	def Extended(self, lineInfo):
 		
 		subplot         = lineInfo["subplot"]    
@@ -479,10 +484,11 @@ class PlotObject:
 				marker=marker,
 				label= f"{yname}: {round(self.Data[yListName][-1],2)}"
 			)
-
 		subplot.legend(loc='upper left', frameon=False)
 
 	def startPlot(self):
+
+		# bruker tkinter (standard library)
 		self.window.title("EV3 Custom Stop")
 		self.window.config(bg='#567')
 		ws = self.window.winfo_screenwidth()
@@ -496,6 +502,7 @@ class PlotObject:
 		button.config(font=("Consolas",15))
 		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
 
+		# liveplot eventen som er ansvarlig for plotting.
 		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
 		plt.show(block=False)
 		self.window.mainloop()

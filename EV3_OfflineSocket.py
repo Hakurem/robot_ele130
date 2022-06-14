@@ -6,9 +6,6 @@ from plotClass import PlotObject
 import socket
 from time import perf_counter, sleep
 import json
-import tkinter as tk
-import _thread
-
 
 
 class Bunch(dict):
@@ -74,16 +71,14 @@ def producer(signal_queue):
             print(f'noe gikk galt {e}')
             break
             
-        sleep(0.04)
-        """
-        dt = perf_counter()-dt_stamp
-        dt_stamp = perf_counter()
-        if dt < 0.01:
-            ts = 0.01-dt
-            sleep(ts)
-        else:
-            sleep(0.01)
-        """
+        sleep(0.001)
+        # dt = perf_counter()-dt_stamp
+        # dt_stamp = perf_counter()
+        # if dt < 0.01:
+        #     ts = 0.01-dt
+        #     sleep(ts)
+        # else:
+        #     sleep(0.01)
         k+=1
         
 
@@ -127,7 +122,6 @@ def runPlot(sock):
         color           = "b",
         yname			= "random values"
     )
-
 
     plt.createlines(
         subplot         = ax[1],    
