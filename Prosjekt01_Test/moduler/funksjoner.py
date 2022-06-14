@@ -3,6 +3,19 @@
 # at det vi kaller på er en funksjon/metode eller en egendefinert-variabel
 # OBS! unngå å navngi listene dine med innebygde metoder fra dictionary
 
+def setupPaths():
+    import os
+    import sys
+    try: # kjører fra PC fordi "os.path.join()" ikke støttes i micropython
+        os.path.join(os.getcwd(), r'HovedFiler')
+        return "PC"
+    except AttributeError: # kjører fra roboten (ev3)
+        return "EV3"
+    except Exception as e:
+        print('ukjent error ved innlegging av søkestier')
+        print(e)
+        sys.exit()
+
 
 class Bunch(dict):
     def __init__(self, *args, **kwds):

@@ -4,28 +4,34 @@
 # Setter opp søkestier og importerer pakker (sjekker om vi er på ev3 eller på pc)
 import os
 import sys
-try: # kjører fra PC fordi "os.path.join()" ikke støttes i micropython
-	sys.path.append(os.getcwd()) # roten av ditt repository
-	sys.path.append(os.path.join(os.getcwd(), r'HovedFiler'))
-	sys.path.append(os.path.join(os.getcwd(), r'moduler'))
+sys.path.append(os.getcwd())
+sys.path.append(os.getcwd()+"/"+"HovedFiler")
+sys.path.append(os.getcwd()+"/"+"moduler")
+from funksjoner import *
+device = setupPaths()
+if device == "PC":
 	from plotClass import PlotObject
-except AttributeError: # kjører fra roboten (ev3)
-	p_root = os.getcwd() 
-	sys.path.append(p_root)
-	sys.path.append(p_root+"/"+"HovedFiler")
-	sys.path.append(p_root+"/"+"moduler")
-except Exception as e:
-	print('ukjent error ved innlegging av søkestier')
-	print(e)
-	sys.exit()
 import json
 from time import perf_counter
 from EV3AndJoystick import *
-from funksjoner import *
 from MineFunksjoner import *
 d = Bunch()			
 Configs = Bunch()
 _g = Bunch()
+# try: # kjører fra PC fordi "os.path.join()" ikke støttes i micropython
+# 	sys.path.append(os.getcwd()) # roten av ditt repository
+# 	sys.path.append(os.path.join(os.getcwd(), r'HovedFiler'))
+# 	sys.path.append(os.path.join(os.getcwd(), r'moduler'))
+# 	from plotClass import PlotObject
+# except AttributeError: # kjører fra roboten (ev3)
+# 	p_root = os.getcwd() 
+# 	sys.path.append(p_root)
+# 	sys.path.append(p_root+"/"+"HovedFiler")
+# 	sys.path.append(p_root+"/"+"moduler")
+# except Exception as e:
+# 	print('ukjent error ved innlegging av søkestier')
+# 	print(e)
+# 	sys.exit()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 

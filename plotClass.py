@@ -1,14 +1,16 @@
 from Main import d, plotMethod, desimaler
 import matplotlib
 backends = ["Qt5Agg","TkAgg","macosx"]
+chosen_backend = ""
+comment = ""
 for b in backends:
 	try:
 		matplotlib.use(b)
 		import matplotlib.pyplot as plt
 		from matplotlib.animation import FuncAnimation
 		if b == "macosx" and plotMethod == 2:
-			print("macosx backend støtter ikke plottemetode 2!!!")
-		print(f"Bruker backend {b} for plotting")
+			comment = "macosx backend støtter ikke plottemetode 2!"
+		chosen_backend = f"Bruker backend {b} for plotting"
 		break
 	except:
 		pass
@@ -35,16 +37,21 @@ except:
 #_______________________________________
 
 
-root = tk.Tk()
-screen_x = root.winfo_screenwidth()
-screen_y = root.winfo_screenheight()
-root.withdraw()
-
 
 
 class PlotObject:
 	def __init__(self, nrows, ncols, sharex=True):
 
+		print("\n___Status__for__plotting___")
+		if chosen_backend:
+			print(chosen_backend)
+		if comment:
+			print(comment)
+		print("___________________________\n")
+
+		self.window = tk.Tk()
+		screen_x = self.window.winfo_screenwidth()
+		screen_y = self.window.winfo_screenheight()
 
 		self.nrows = nrows
 		self.ncols = ncols
@@ -58,7 +65,7 @@ class PlotObject:
 			self.fig.set_figheight(screen_y/100)
 			self.fig.set_figwidth(screen_x/96/2)
 		except:
-			print('kan ikke endre posisjon av plotvindu på MAC',flush=True)
+			#print('kan ikke endre posisjon av plotvindu på MAC',flush=True)
 			pass
 		
 
@@ -250,12 +257,14 @@ class PlotObject:
 
 
 	def stopPlot(self):
-		print("STOPPING NOW",flush=True)
+
+		
 		# stop liveplot event
 		try:
 			self.livePlot.pause()
 			self.livePlot.event_source.stop()
 			self.livePlot._stop()
+			self.window.withdraw()
 		except Exception as e:
 			print(f"error when trying to stop plot event{e}",flush=True)
 			pass
@@ -474,12 +483,6 @@ class PlotObject:
 		subplot.legend(loc='upper left', frameon=False)
 
 	def startPlot(self):
-
-		def stopNow():
-			self.window.withdraw()
-			self.stopPlot()
-
-		self.window = tk.Tk()
 		self.window.title("EV3 Custom Stop")
 		self.window.config(bg='#567')
 		ws = self.window.winfo_screenwidth()
@@ -489,13 +492,14 @@ class PlotObject:
 		x = ws - (w) 	#(ws/2) - (w/2)
 		y = hs/2 - h/2 #(hs/2) - (h/2)
 		self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-		button = tk.Button(self.window, text ="Stop Program!",command=stopNow)
+		button = tk.Button(self.window, text ="Stop Program!",command=lambda: self.stopPlot())
 		button.config(font=("Consolas",15))
 		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
 
 		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
 		plt.show(block=False)
 		self.window.mainloop()
+		plt.show()
 	
 if __name__ == "__main__":
 	pass

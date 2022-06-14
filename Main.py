@@ -3,7 +3,7 @@ class Bunch(dict):
         super(Bunch, self).__init__(*args, **kwds)
         self.__dict__ = self
 
-plotMethod = 2
+plotMethod = 1
 desimaler = 5
 
 

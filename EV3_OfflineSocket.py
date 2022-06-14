@@ -39,6 +39,7 @@ def producer(signal_queue):
 
     connection, _ = sock.accept()
     connection.send(b"ack")
+    print("socket connection established. Sending data through socket",flush=True)
 
     dt_stamp = perf_counter()
     k=0
@@ -86,34 +87,6 @@ def producer(signal_queue):
         k+=1
         
 
-
-def CustomStop():
-    pass
-	# def StopProgram():
-	# 	button.config(text="fix plot")
-	# 	#SEND STOP COMMAND TO ROBOT
-	# 	try:
-	# 		plt.stopPlot()
-	# 	except:
-	# 		pass
-
-	# window = tk.Tk()
-	# window.title("EV3 Custom Stop")
-	# window.config(bg='#567')
-	# ws = window.winfo_screenwidth()
-	# hs = window.winfo_screenheight()
-	# w = 250
-	# h = 250
-	# x = ws - (w) 	#(ws/2) - (w/2)
-	# y = hs/2 - h/2 #(hs/2) - (h/2)
-	# window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-	# button = tk.Button(window, text ="Stop Program!",command=StopProgram)
-	# button.config(font=("Consolas",15))
-	# button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
-	# window.mainloop()
-
-
-
 def main():
     signal_queue = Queue()
     p = Process(target=producer, args = (signal_queue,))
@@ -141,7 +114,7 @@ def main():
 
 def runPlot(sock):
     plt = PlotObject(nrows = 3, ncols = 1)
-    plt.InitializeData(d,sock)
+    
     ax = plt.ax
     ax[0].set_title('Random')
     ax[1].set_title('Index')
@@ -174,7 +147,7 @@ def runPlot(sock):
     )
     #________________________________
     
-    #_thread.start_new_thread(CustomStop, (plt,))
+    plt.InitializeData(d,sock)
     plt.startPlot()
 
 if __name__=="__main__":
