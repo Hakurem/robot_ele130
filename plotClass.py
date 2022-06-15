@@ -45,24 +45,18 @@ class PlotObject:
 			for b in backends:
 				try:
 					matplotlib.use(b)
-					import matplotlib.pyplot as plt
-					from matplotlib.animation import FuncAnimation
-					self.plt = plt
-					self.FuncAnimation = FuncAnimation
 					print(f"plottemetode 2 er valgt. Byttet backend fra macosx til {b}",flush=True)
 					success=1
 					break
 				except:
 					pass
 			if not success:
+				print("VIKTIG: Vennligst velg plottemetode 1 eller installer Qt5Agg/TkAgg backends")
 				print("klarte ikke bytte backend fra macosx ved valg av plottemetode 2",flush=True)
-				print("\nVIKTIG: Vennligst velg plottemetode 1 eller installer Qt5Agg/TkAgg backends\n")
-				import matplotlib.pyplot as plt
-				from matplotlib.animation import FuncAnimation
-				self.plt = plt
-				self.FuncAnimation = FuncAnimation
-				
-
+		import matplotlib.pyplot as plt
+		from matplotlib.animation import FuncAnimation
+		self.plt = plt
+		self.FuncAnimation = FuncAnimation
 		print(f"Bruker backend {matplotlib.get_backend().lower()} for plotting",flush=True)
 		if matplotlib.get_backend().lower() == "macosx" and self.plotMethod == 2:
 			print("macosx backend støtter ikke plottemetode 2!",flush=True)
