@@ -3,6 +3,11 @@ class Bunch(dict):
         super(Bunch, self).__init__(*args, **kwds)
         self.__dict__.update(self)
 
+class BunchPython(dict):
+    def __init__(self, *args, **kwds):
+        super(BunchPython, self).__init__(*args, **kwds)
+        self.__dict__ = self
+
 
 Configs = Bunch()
 Configs.plotMethod = 2

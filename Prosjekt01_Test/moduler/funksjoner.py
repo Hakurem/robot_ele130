@@ -3,25 +3,19 @@
 # at det vi kaller på er en funksjon/metode eller en egendefinert-variabel
 # OBS! unngå å navngi listene dine med innebygde metoder fra dictionary
 
+# minimalt støtte til punktumnotasjon i micropython
 class Bunch(dict):
     def __init__(self, *args, **kwds):
         super(Bunch, self).__init__(*args, **kwds)
         self.__dict__.update(self)
 
 
-#Skulle ønske dette fungerte på micropython, men lager en getter og setter manuellt istede nedenfor
-# class Bunch(dict):
-#     def __init__(self, *args, **kwds):
-#         super(Bunch, self).__init__(*args, **kwds)
-#         self.__dict__ = self
+# Støttes i python 3, men ikke i micropython. Mye mer funksjonalitet
+class BunchPython(dict):
+    def __init__(self, *args, **kwds):
+        super(BunchPython, self).__init__(*args, **kwds)
+        self.__dict__ = self
 
-
-# class Bunch(dict):
-#     def __init__(self, *args, **kwds):
-#         super(Bunch, self).__init__(*args, **kwds)
-#         self.__dict__ = self
-#     def __getattr__(self,key):
-#         return self[key]
 
 
 # Konverterer tekst-variabler, 

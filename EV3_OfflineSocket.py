@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from multiprocessing import Process, Queue
 import math
-from Main import d, Configs, Bunch
+from Main import d, Configs, BunchPython
 from plotClass import PlotObject
 import socket
 from time import perf_counter, sleep
 import json
+d = BunchPython(d.__dict__)
 
 
 
@@ -54,7 +55,7 @@ def producer(signal_queue):
             d.index.append(k)
 
             # Create a temp dict to store most recent values
-            data = Bunch()
+            data = BunchPython()
             for key in d:
                 try:
                     data[key] = d[key][-1]

@@ -27,7 +27,7 @@ except:
 class PlotObject:
 
 	def __init__(self, Data, Configs, sock):
-		self.Data = Data.__dict__
+		self.Data = Data
 		self.sock = sock
 		self.plotMethod = Configs.plotMethod
 		self.desimaler = Configs.desimaler

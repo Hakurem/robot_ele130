@@ -10,8 +10,10 @@ sys.path.append(os.path.join(os.getcwd(), r'Moduler'))
 from plotClass import PlotObject
 import socket
 import sys
+from funksjoner import BunchPython
 from Main import Configs, d, MathCalculations, unpackMeasurement, lagPlot, writeOfflineCalc
 filenameMeas = Configs.filenameMeas
+d = BunchPython(d.__dict__)
 #---------------------------------------------------------------------
 
 
