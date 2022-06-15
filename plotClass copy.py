@@ -2,7 +2,28 @@
 import matplotlib
 import json
 import tkinter as tk
-import sys
+
+# Qt5Agg er den ideelle på mac (veldig rask). 
+# TkAgg og macosx er ok backends, men macosx 
+# fungerer ikke med plottemetode 2 (macosx)
+
+# iterer gjennom backends og velger. Om ingen er tilstede brukes default
+backends = ["Qt5Agg","TkAgg","macosx"]
+for b in backends:
+	try:
+		matplotlib.use(b)
+		import matplotlib.pyplot as plt
+		from matplotlib.animation import FuncAnimation
+		break
+	except:
+		pass
+
+# Legger til en kommentar i output for informasjon om backend evt om plottemetode 2 støttes 
+chosen_backend = f"Bruker backend {matplotlib.get_backend().lower()} for plotting"
+if matplotlib.get_backend().lower() == "macosx" and plotMethod == 2:
+	comment = "macosx backend støtter ikke plottemetode 2!"
+
+
 
 class Bunch(dict):
     def __init__(self, *args, **kwds):
@@ -15,66 +36,52 @@ try:
 	from reliability.Other_functions import crosshairs
 except:
 	Interactivity = False
+
 #_______________________________________
 
 
 
 # Klassen som inneholder data og metoder til visualisering av plott
-
 class PlotObject:
 
-	def __init__(self, Data, Configs, sock):
-		self.Data = Data
-		self.sock = sock
-		self.plotMethod = Configs.plotMethod
-		self.desimaler = Configs.desimaler
-		self.bytesData = b""
-		self.sock = sock
+	def __init__(self)
 
-	def plot(self, nrows, ncols, sharex=False):
+	def __init__(self, nrows, ncols, sharex=True):
 
-		# Qt5Agg er den ideelle backend (etter min mening) på mac (veldig rask og responsivt). 
-		# TkAgg og macosx er ok backends. 
-		# macosx fungerer ikke med plottemetode 2
-
-		# detekterer plotte-metode 2 og prøver å skifte backend (gir status melding i konsollen)
 		print("\n___Status for plotting___",flush=True)
-		if self.plotMethod == 2 and matplotlib.get_backend().lower() == "macosx":
-			backends = ["sQt5Agg","sTkAgg"]
-			success=0
-			for b in backends:
-				try:
-					matplotlib.use(b)
-					import matplotlib.pyplot as plt
-					from matplotlib.animation import FuncAnimation
-					self.plt = plt
-					self.FuncAnimation = FuncAnimation
-					print(f"plottemetode 2 er valgt. Byttet backend fra macosx til {b}",flush=True)
-					success=1
-					break
-				except:
-					pass
-			if not success:
-				print("klarte ikke bytte backend fra macosx ved valg av plottemetode 2",flush=True)
-				print("\nVIKTIG: Vennligst velg plottemetode 1 eller installer Qt5Agg/TkAgg backends\n")
-				import matplotlib.pyplot as plt
-				from matplotlib.animation import FuncAnimation
-				self.plt = plt
-				self.FuncAnimation = FuncAnimation
-				
-
-		print(f"Bruker backend {matplotlib.get_backend().lower()} for plotting",flush=True)
-		if matplotlib.get_backend().lower() == "macosx" and self.plotMethod == 2:
-			print("macosx backend støtter ikke plottemetode 2!",flush=True)
+		if chosen_backend:
+			print(chosen_backend,flush=True)
+		try:
+			print(comment,flush=True)
+		except NameError:
+			pass
 		print("___________________________\n",flush=True)
-		#__________________________________________________________________
-
 
 		self.window = tk.Tk()
+		
+
 		self.nrows = nrows
 		self.ncols = ncols
 		self.fig, self.ax = plt.subplots(nrows, ncols, sharex=sharex)
 		self.counter = 0
+		
+		# screen_x = self.window.winfo_screenwidth()
+		# screen_y = self.window.winfo_screenheight()
+		# print("\n___Status for skalering & posisjonering av stop-knapp_",flush=True)
+		# try:
+		# 	thismanager = plt.get_current_fig_manager()
+		# 	#mac bruker //1 mens windows //2
+		# 	thismanager.window.wm_geometry(f"-{int(screen_x//2)}+0")
+		# 	self.fig.set_figheight(screen_y/100)
+		# 	self.fig.set_figwidth(screen_x/96/2)
+		# 	print("status: ok",flush=True)
+		# except Exception as e:
+		# 	print(e,flush=True)
+		# 	print('kan ikke endre posisjon av plotvindu på MAC',flush=True)
+		# print("______________________________________________________\n",flush=True)
+		
+		# creates artists to be rendered and maps them with a dictionary
+		# self.reDraw = {}
 		self.Mapping = {}
 		self.figure_list = []
 		self.x_label_list = []
@@ -84,6 +91,15 @@ class PlotObject:
 		# keep track of highest/lowest value to manually update limits of y-axis when blitting
 		self.y_limits = {}
 
+
+	def InitializeData(self,Data,Configs,sock):
+		self.Data = Data #Data.__dict__
+		self.sock = sock
+		self.plotMethod = Configs.plotMethod
+		self.desimaler = Configs.desimaler
+		self.bytesData = b""
+		self.sock = sock #self.socketData = self.fetchData(sock)
+
 		# formats the subplots to one dimension list
 		if self.nrows*self.ncols > 1:
 			iterator = self.ax.flat
@@ -92,7 +108,7 @@ class PlotObject:
 
 		for subplot in iterator:
 			
-			if self.plotMethod == 2:
+			if plotMethod == 2:
 				subplot.tick_params(axis='x', colors='white') 
 				subplot.tick_params(axis='y', colors='white')
 
@@ -104,8 +120,6 @@ class PlotObject:
 				"x_label": None,
 			}
 
-
-		
 
 	def createlines(self, subplot, xListName,  yListName, **kwargs):
 		lineInfo = {}
@@ -136,7 +150,7 @@ class PlotObject:
 	
 	def plotData(self):
 
-		if self.plotMethod == 1:
+		if plotMethod == 1:
 			for lineInfo in self.lines.values():
 				subplot = lineInfo["subplot"]
 				for line in subplot.get_lines():
@@ -145,9 +159,9 @@ class PlotObject:
 		
 		# Håndtering av plottemetoder
 		for line in self.lines.values():
-			if self.plotMethod == 1:
+			if plotMethod == 1:
 				self.Extended(line)
-			elif self.plotMethod == 2:
+			elif plotMethod == 2:
 				self.Blitting(line)
 			else:
 				raise Exception("Velg plottemetode 1 eller 2")
@@ -219,7 +233,7 @@ class PlotObject:
 					rowOfData = json.loads(rowOfData)
 					for key in rowOfData:
 						self.Data[key].append(rowOfData[key])
-						if self.plotMethod == 2:				
+						if plotMethod == 2:				
 							if not key in self.y_limits:
 								self.y_limits[key] = [0,0]
 							elif rowOfData[key] < self.y_limits[key][0]:
@@ -259,7 +273,7 @@ class PlotObject:
 			pass
 
 		# clear canvas  and redraw canvas
-		if self.plotMethod == 1:
+		if plotMethod == 1:
 			try:
 				for lineInfo in self.lines.values():
 					subplot = lineInfo["subplot"]
@@ -320,15 +334,15 @@ class PlotObject:
 				)
 			
 			subplot.legend(loc='upper left', frameon=False)
-			if self.plotMethod == 2:
+			if plotMethod == 2:
 				subplot.tick_params(axis='x', colors='black') 
 				subplot.tick_params(axis='y', colors='black')
 
 		if Interactivity:
-			crosshairs(xlabel="x",ylabel="y",decimals=self.desimaler) #it is important to call this last
+			crosshairs(xlabel="x",ylabel="y",decimals=desimaler) #it is important to call this last
 
 		self.window.withdraw()
-		self.plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
+		plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
 	
 
 		
@@ -488,10 +502,10 @@ class PlotObject:
 		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
 
 		# liveplot eventen som er ansvarlig for plotting.
-		self.livePlot = self.FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
-		self.plt.show(block=False)
+		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
+		plt.show(block=False)
 		self.window.mainloop()
-		self.plt.show()
+		plt.show()
 	
 if __name__ == "__main__":
 	pass

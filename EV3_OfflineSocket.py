@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from multiprocessing import Process, Queue
 import math
-from Main import d
+from Main import d, Configs
 from plotClass import PlotObject
 import socket
 from time import perf_counter, sleep
@@ -71,14 +71,14 @@ def producer(signal_queue):
             print(f'noe gikk galt {e}')
             break
             
-        sleep(0.001)
-        # dt = perf_counter()-dt_stamp
-        # dt_stamp = perf_counter()
-        # if dt < 0.01:
-        #     ts = 0.01-dt
-        #     sleep(ts)
-        # else:
-        #     sleep(0.01)
+       
+        dt = perf_counter()-dt_stamp
+        dt_stamp = perf_counter()
+        if dt < 0.01:
+            ts = 0.01-dt
+            sleep(ts)
+        else:
+            sleep(0.01)
         k+=1
         
 
@@ -108,8 +108,10 @@ def main():
 
 
 def runPlot(sock):
-    plt = PlotObject(nrows = 3, ncols = 1)
-    
+    plt = PlotObject(d, Configs, sock) # ikke rør
+
+
+    plt.plot(nrows=3, ncols=1, sharex=False)
     ax = plt.ax
     ax[0].set_title('Random')
     ax[1].set_title('Index')
@@ -141,7 +143,7 @@ def runPlot(sock):
     )
     #________________________________
     
-    plt.InitializeData(d,sock)
+    
     plt.startPlot()
 
 if __name__=="__main__":
