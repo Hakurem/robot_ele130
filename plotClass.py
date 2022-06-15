@@ -33,14 +33,14 @@ class PlotObject:
 
 	def plot(self, nrows, ncols, sharex=False):
 
-		# Qt5Agg er den ideelle backend (etter min mening) på mac (veldig rask og responsivt). 
+		# Qt5Agg/QtAgg er ideelle backends (etter min mening) på mac (veldig rask og responsivt). 
 		# TkAgg og macosx er ok backends. 
 		# macosx fungerer ikke med plottemetode 2
 
 		# detekterer plotte-metode 2 og prøver å skifte backend (gir status melding i konsollen)
 		print("\n___Status for plotting___",flush=True)
-		if self.plotMethod == 2 and matplotlib.get_backend().lower() == "macosx":
-			backends = ["sQt5Agg","sTkAgg"]
+		if  matplotlib.get_backend().lower() == "macosx": #self.plotMethod == 2 and
+			backends = ["Qt5Agg","QtAgg","TkAgg"]
 			success=0
 			for b in backends:
 				try:
@@ -51,7 +51,7 @@ class PlotObject:
 				except:
 					pass
 			if not success:
-				print("VIKTIG: Vennligst velg plottemetode 1 eller installer Qt5Agg/TkAgg backends")
+				print("VIKTIG: Vennligst velg plottemetode 1. les mer her: https://matplotlib.org/3.5.0/users/explain/backends.html")
 				print("klarte ikke bytte backend fra macosx ved valg av plottemetode 2",flush=True)
 		import matplotlib.pyplot as plt
 		from matplotlib.animation import FuncAnimation

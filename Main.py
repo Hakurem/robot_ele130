@@ -5,7 +5,7 @@ class Bunch(dict):
 
 
 Configs = Bunch()
-Configs.plotMethod = 2
+Configs.plotMethod = 1
 Configs.desimaler = 5
 
 
