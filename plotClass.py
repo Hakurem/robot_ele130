@@ -2,12 +2,9 @@
 import matplotlib
 import json
 import tkinter as tk
-import sys
 
-class Bunch(dict):
-    def __init__(self, *args, **kwds):
-        super(Bunch, self).__init__(*args, **kwds)
-        self.__dict__ = self
+
+
 
 # Bruk modulen til å velge datapunkter om den er installert
 Interactivity = True
@@ -31,7 +28,7 @@ class PlotObject:
 		self.bytesData = b""
 		self.sock = sock
 
-	def plot(self, nrows, ncols, sharex=False):
+	def create(self, nrows, ncols, sharex=False):
 
 		# Qt5Agg/QtAgg er ideelle backends (etter min mening) på mac (veldig rask og responsivt). 
 		# TkAgg og macosx er ok backends. 
@@ -62,7 +59,6 @@ class PlotObject:
 			print("macosx backend støtter ikke plottemetode 2!",flush=True)
 		print("___________________________\n",flush=True)
 		#__________________________________________________________________
-
 
 		self.window = tk.Tk()
 		self.nrows = nrows
@@ -101,7 +97,7 @@ class PlotObject:
 
 		
 
-	def createlines(self, subplot, xListName,  yListName, **kwargs):
+	def plot(self, subplot, xListName,  yListName, **kwargs):
 		lineInfo = {}
 
 		# REQUIRED
@@ -146,50 +142,8 @@ class PlotObject:
 			else:
 				raise Exception("Velg plottemetode 1 eller 2")
 
-	
-	# Generator to read socket bytes fifo
-	"""
-	def fetchData(self,sock):
-		bytesData = b""
-		while True:
-			bytesData += sock.recv(1024)
-			idx = bytesData.find(b"?")
-			if idx != -1:
-				packet = bytesData[:idx]
-				if bytesData[idx:] == b"?":
-					bytesData = b""
-				else:
-					bytesData = bytesData[idx+1:]
-				yield packet # do something with packet
-	"""
-
 
 	def live(self,i): # i is required internally (removing this causes bugs when resizing window)
-
-		"""
-		try:
-			bytesData = next(self.socketData)
-			if bytesData == b"end":
-				print("Recieved end signal")
-			rowOfData = json.loads(bytesData)
-			for key in rowOfData:
-				self.Data[key].append(rowOfData[key])
-				if plotMethod == 2:				
-					if not key in self.y_limits:
-						self.y_limits[key] = [0,0]
-					elif rowOfData[key] < self.y_limits[key][0]:
-						self.y_limits[key][0] = rowOfData[key]
-					elif rowOfData[key] > self.y_limits[key][1]:
-						self.y_limits[key][1] = rowOfData[key]
-					#_________________________________
-
-			self.plotData()
-
-		except Exception as e:
-			print(f"error occured when reading socket {e}")
-		
-		"""
-
 		try:
 			self.bytesData += self.sock.recv(1024)
 		except Exception as e:
@@ -252,16 +206,19 @@ class PlotObject:
 			print(f"Error when trying to stop plot event (vanligvis ikke problem): {e}",flush=True)
 			pass
 
-		# clear canvas  and redraw canvas
+		# clear old lines before redrawing
 		if self.plotMethod == 1:
 			try:
 				for lineInfo in self.lines.values():
 					subplot = lineInfo["subplot"]
-					subplot.get_legend().remove()
+					# try:
+					# 	subplot.get_legend().remove()
+					# except:
+					# 	pass
 					for line in subplot.get_lines():
 						line.remove()
 			except Exception as e:
-				print(f'issues with stopping plot: {e}',flush=True)
+				print(f'stopping plot status: {e}',flush=True)
 		
 		# Remove labels and lines from our custom storage
 		for line in self.figure_list:
@@ -467,6 +424,10 @@ class PlotObject:
 
 	def startPlot(self):
 
+		def signalRobot():
+			#self.sock.send(b'Stop')
+			self.stopPlot()
+
 		# bruker tkinter (standard library)
 		self.window.title("EV3 Custom Stop")
 		self.window.config(bg='#567')
@@ -474,10 +435,10 @@ class PlotObject:
 		hs = self.window.winfo_screenheight()
 		w = 250
 		h = 250
-		x = ws - (w) 	#(ws/2) - (w/2)
-		y = hs/2 - h/2 #(hs/2) - (h/2)
+		x = ws - (w)
+		y = hs/2 - h/2
 		self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-		button = tk.Button(self.window, text ="Stop Program!",command=lambda: self.stopPlot())
+		button = tk.Button(self.window, text ="Stop Program!",command=signalRobot)
 		button.config(font=("Consolas",15))
 		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
 

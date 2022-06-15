@@ -4,16 +4,16 @@
 # Legger til mappene i søkestien for imports bare når programmet kjører
 import os
 import sys
+import _thread
 p_root = os.getcwd() #root of project
 sys.path.append(p_root)
 sys.path.append(p_root+"/"+"HovedFiler")
 sys.path.append(p_root+"/"+"moduler")
 #_______________________________________________________
 
-import sys
-import _thread
+
 import config
-from Main import Configs, d, _G, setPorts, addMeasurements, MathCalculations, writeMeasToFile, writeCalcToFile, SendLiveData, setMotorPower, stopMotors
+from Main import Configs, d, _g, setPorts, addMeasurements, MathCalculations, writeMeasToFile, writeCalcToFile, SendLiveData, setMotorPower, stopMotors
 try:
     from EV3AndJoystick import *
     from pybricks.parameters import Port
@@ -56,7 +56,6 @@ def main():
             print(" --> Joystick er ikke koplet til")
         
         # make a thread to stop the ev3 from the laptop
-
         if "connection" in robot.__dict__:
             print(' --> setter opp stopp-knapp til via PC')
             _thread.start_new_thread(StopLoop, (robot,))  
@@ -65,12 +64,12 @@ def main():
         k = 0
         while True:
 
-            addMeasurements(d,robot,_G,k) # just use k to check if we are at k=0 or k>0
+            addMeasurements(d,robot,_g,k) # just use k to check if we are at k=0 or k>0
 
             if len(Configs.filenameMeas)>4:
                 writeMeasToFile(d,robot,k)
             
-            MathCalculations(d,_G,k)
+            MathCalculations(d,_g,k)
 
             if len(Configs.filenameCalcOnline)>4:
                 writeCalcToFile(d,robot,k)

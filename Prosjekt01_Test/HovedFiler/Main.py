@@ -1,37 +1,20 @@
 # coding=utf-8
 
-# +++++++++++++++++++++++++++++ IKKE RØR ++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++++++++ IKKE ENDRE ++++++++++++++++++++++++++++++++++++++++
 # Setter opp søkestier og importerer pakker (sjekker om vi er på ev3 eller på pc)
 import os
 import sys
+import json
+from time import perf_counter
 sys.path.append(os.getcwd())
 sys.path.append(os.getcwd()+"/"+"HovedFiler")
 sys.path.append(os.getcwd()+"/"+"moduler")
-from funksjoner import *
-device = setupPaths()
-if device == "PC":
-	from plotClass import PlotObject
-import json
-from time import perf_counter
 from EV3AndJoystick import *
 from MineFunksjoner import *
+from funksjoner import *
 d = Bunch()			
 Configs = Bunch()
 _g = Bunch()
-# try: # kjører fra PC fordi "os.path.join()" ikke støttes i micropython
-# 	sys.path.append(os.getcwd()) # roten av ditt repository
-# 	sys.path.append(os.path.join(os.getcwd(), r'HovedFiler'))
-# 	sys.path.append(os.path.join(os.getcwd(), r'moduler'))
-# 	from plotClass import PlotObject
-# except AttributeError: # kjører fra roboten (ev3)
-# 	p_root = os.getcwd() 
-# 	sys.path.append(p_root)
-# 	sys.path.append(p_root+"/"+"HovedFiler")
-# 	sys.path.append(p_root+"/"+"moduler")
-# except Exception as e:
-# 	print('ukjent error ved innlegging av søkestier')
-# 	print(e)
-# 	sys.exit()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -276,8 +259,6 @@ def writeCalcToFile(d,r,k):
 
 
 
-
-
 # Kjører kun på PC-en i offline.
 # Leser gjennom filnameMeasurement og henter ut målinger.
 # Målingene beregnes og lagres i til fil
@@ -293,7 +274,6 @@ def writeOfflineCalc(d, lengde):
 			)
 		f.write(streng)
 #_______________________________________________________________________
-
 
 
 
@@ -315,15 +295,13 @@ def SendLiveData(data,robot):
 # Dersom nrows og ncols = 1, så har du bare ax.
 # Dersom enten nrows = 1 eller ncols = 1, så gis ax 1 argument som ax[0], ax[1], osv.
 # Dersom både nrows > 1 og ncols > 1,  så må ax gis 2 argumenter som ax[0,0], ax[1,0], osv
-def lagPlot():
+def lagPlot(plt):
 	nrows = 2
 	ncols = 2
 	sharex = False
 
-	#++++++++Lager objekt fra plottklassen og sender nødvendig data++++
-	plt = PlotObject(nrows = nrows, ncols = ncols, sharex = sharex)
+	plt.create(nrows,ncols,sharex)
 	ax = plt.ax
-	#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	# TODO: Legg inn titler og aksenavn (optional) på subplotsene dine (eks er under)
 	ax[0,0].set_title('Målinger av flow')  
@@ -339,7 +317,7 @@ def lagPlot():
 	ax[1,0].set_ylabel("tidsskritt")
 
 
-	plt.createlines(
+	plt.plot(
 		# OBLIGATORISK
 		subplot         = ax[0,0],    
 		xListName       = "Tid", 	# navn på x-aksen som plottes     
@@ -357,20 +335,18 @@ def lagPlot():
 		ycolor			= "",	# farge på animerte y-verdien
 	)
 
-	plt.createlines(
+	plt.plot(
 		subplot         = ax[0,1],    
 		xListName       = "Tid",       
 		yListName       = "Euler",
 	)
 
 
-	plt.createlines(
+	plt.plot(
 		subplot         = ax[1,0],    
 		xListName       = "Tid",       
 		yListName       = "Ts",
 	)
 
-	return plt
-
-	
+	#return plt
 #______________________________________ FERDIG _______________________________________________

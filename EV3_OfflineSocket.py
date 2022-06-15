@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 from multiprocessing import Process, Queue
 import math
-from Main import d, Configs
+from Main import d, Configs, Bunch
 from plotClass import PlotObject
 import socket
 from time import perf_counter, sleep
 import json
 
 
-class Bunch(dict):
-    def __init__(self, *args, **kwds):
-        super(Bunch, self).__init__(*args, **kwds)
-        self.__dict__ = self
 
 def FIR_filter(f_fir,f,m,k):
 	if k == 0:
@@ -54,6 +50,7 @@ def producer(signal_queue):
 
        
             d.rand.append(math.sin(0.1*k)) #d.rand.append(random.randint(-10,10))
+            d.rand2.append(math.cos(0.1*k)) #d.rand.append(random.randint(-10,10))
             d.index.append(k)
 
             # Create a temp dict to store most recent values
@@ -103,29 +100,48 @@ def main():
     except socket.timeout:
         print("failed")
         exit()
-    runPlot(sock)
-
-
-
-def runPlot(sock):
     plt = PlotObject(d, Configs, sock) # ikke rør
+    runPlot(plt)
 
 
-    plt.plot(nrows=3, ncols=1, sharex=False)
+
+def runPlot(plt):
+    
+    plt.create(nrows=3, ncols=1, sharex=False)
     ax = plt.ax
+    
+    # Legg til navn og aksetitler for hver subplot
     ax[0].set_title('Random')
-    ax[1].set_title('Index')
-    ax[2].set_title('Ts')
+    ax[0].set_xlabel("tid [sek]")
+    ax[0].set_ylabel("flow")
 
-    plt.createlines(
+    ax[1].set_title('Index')
+    ax[1].set_xlabel("tid [sek]")
+    ax[1].set_ylabel('antall')
+
+    ax[2].set_title('Ts')
+    ax[2].set_xlabel("tid [sek]")
+    ax[2].set_ylabel("tid [sek]")
+    
+
+    plt.plot(
         subplot         = ax[0],    
         xListName       = "tid",       
         yListName       = "rand",
         color           = "b",
-        yname			= "random values"
+        yname			= "sinus"
     )
 
-    plt.createlines(
+    plt.plot(
+        subplot         = ax[0],    
+        xListName       = "tid",       
+        yListName       = "rand2",
+        color           = "r",
+        yname			= "cosinus"
+    )
+
+
+    plt.plot(
         subplot         = ax[1],    
         xListName       = "tid",       
         yListName       = "index",
@@ -134,7 +150,7 @@ def runPlot(sock):
     )
 
 
-    plt.createlines(
+    plt.plot(
         subplot         = ax[2],    
         xListName       = "tid",       
         yListName       = "Ts",

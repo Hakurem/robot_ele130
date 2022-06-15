@@ -7,38 +7,12 @@ sys.path.append(os.path.join(os.getcwd(), r'HovedFiler'))
 sys.path.append(os.path.join(os.getcwd(), r'Moduler'))
 #_______________________________________________________
 
-import tkinter as tk
+from plotClass import PlotObject
 import socket
 import sys
-import _thread
 from Main import Configs, d, MathCalculations, unpackMeasurement, lagPlot, writeOfflineCalc
 filenameMeas = Configs.filenameMeas
 #---------------------------------------------------------------------
-
-
-
-# lager en grafisk brukergrensesnitt (GUI) for å håndtere stopping av Ev3 fra PC
-def CustomStop(sock):
-    window = tk.Tk()
-    def StopProgram():
-        sock.send(b'Stop')
-        window.withdraw()
-
-    window.title("EV3 Custom Stop")
-    window.config( bg='#567')
-    ws = window.winfo_screenwidth()
-    hs = window.winfo_screenheight()
-    w = 250
-    h = 250
-    x = ws-(w)
-    y = hs/2-h/2
-    window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-    button = tk.Button(window, text ="Stop Program!", command = StopProgram)
-    button.config(font=("Consolas",15))
-    button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
-    window.mainloop()
-#______________________________________________________________________________
-
 
 
 def offline(filenameMeas):
@@ -84,10 +58,9 @@ def main():
             except socket.timeout:
                 print("failed")
                 sys.exit()
-                
-            plt = lagPlot()
-            plt.InitializeData(d,Configs, sock)
-            _thread.start_new_thread(CustomStop, (sock,))
+            
+            plt = PlotObject(d, Configs, sock)
+            lagPlot(plt)
             plt.startPlot()
 
 

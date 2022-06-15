@@ -7,12 +7,16 @@ sys.path.append(p_root+"/"+"HovedFiler")
 sys.path.append(p_root+"/"+"moduler")
 #_______________________________________________________
 
-import matplotlib
+
 import json
-import tkinter as tk
+from time import perf_counter
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from tkinter import Tk
+from time import sleep
 
 
-# Bruk modulen til å velge datapunkter om den er installert
+# If we have installed reliability, use it
 Interactivity = True
 try:
 	from reliability.Other_functions import crosshairs
@@ -20,57 +24,30 @@ except:
 	Interactivity = False
 #_______________________________________
 
-
-
-# Klassen som inneholder data og metoder til visualisering av plott
-
 class PlotObject:
-
-	def __init__(self, Data, Configs, sock):
-		self.Data = Data.__dict__
-		self.sock = sock
-		self.plotMethod = Configs.plotMethod
-		self.desimaler = Configs.desimaler
-		self.bytesData = b""
-		self.sock = sock
-
-	def create(self, nrows, ncols, sharex=False):
-
-		# Qt5Agg/QtAgg er ideelle backends (etter min mening) på mac (veldig rask og responsivt). 
-		# TkAgg og macosx er ok backends. 
-		# macosx fungerer ikke med plottemetode 2
-
-		# detekterer plotte-metode 2 og prøver å skifte backend (gir status melding i konsollen)
-		print("\n___Status for plotting___",flush=True)
-		if  matplotlib.get_backend().lower() == "macosx": #self.plotMethod == 2 and
-			backends = ["Qt5Agg","QtAgg","TkAgg"]
-			success=0
-			for b in backends:
-				try:
-					matplotlib.use(b)
-					print(f"plottemetode 2 er valgt. Byttet backend fra macosx til {b}",flush=True)
-					success=1
-					break
-				except:
-					pass
-			if not success:
-				print("VIKTIG: Vennligst velg plottemetode 1. les mer her: https://matplotlib.org/3.5.0/users/explain/backends.html")
-				print("klarte ikke bytte backend fra macosx ved valg av plottemetode 2",flush=True)
-		import matplotlib.pyplot as plt
-		from matplotlib.animation import FuncAnimation
-		self.plt = plt
-		self.FuncAnimation = FuncAnimation
-		print(f"Bruker backend {matplotlib.get_backend().lower()} for plotting",flush=True)
-		if matplotlib.get_backend().lower() == "macosx" and self.plotMethod == 2:
-			print("macosx backend støtter ikke plottemetode 2!",flush=True)
-		print("___________________________\n",flush=True)
-		#__________________________________________________________________
-
-		self.window = tk.Tk()
+	def __init__(self, nrows, ncols, sharex=True):
 		self.nrows = nrows
 		self.ncols = ncols
 		self.fig, self.ax = plt.subplots(nrows, ncols, sharex=sharex)
 		self.counter = 0
+	
+		try:
+			root = Tk()
+			screen_x = root.winfo_screenwidth()
+			screen_y = root.winfo_screenheight()
+			root.withdraw()
+
+			thismanager = plt.get_current_fig_manager()
+			thismanager.window.wm_geometry(f"-{int(screen_x//2)}+0")
+		
+			self.fig.set_figheight(screen_y/100)
+			self.fig.set_figwidth(screen_x/96/2)
+		except:
+			print('kan ikke endre posisjon av plotvindu på MAC',flush=True)
+			pass
+
+		
+		# creates artists to be rendered and maps them with a dictionary
 		self.Mapping = {}
 		self.figure_list = []
 		self.x_label_list = []
@@ -79,6 +56,14 @@ class PlotObject:
 
 		# keep track of highest/lowest value to manually update limits of y-axis when blitting
 		self.y_limits = {}
+
+
+	def InitializeData(self,Data,Configs,sock):
+		self.Data = Data.__dict__
+		self.plotMethod = Configs.plotMethod
+		self.desimaler = Configs.desimaler
+		self.sock = sock
+
 
 		# formats the subplots to one dimension list
 		if self.nrows*self.ncols > 1:
@@ -100,10 +85,7 @@ class PlotObject:
 				"x_label": None,
 			}
 
-
-		
-
-	def plot(self, subplot, xListName,  yListName, **kwargs):
+	def createlines(self, subplot, xListName,  yListName, **kwargs):
 		lineInfo = {}
 
 		# REQUIRED
@@ -130,6 +112,48 @@ class PlotObject:
 		return *self.figure_list, *self.x_label_list, *self.y_label_list
 
 	
+	
+	def live(self,i): # i is required internally (removing this causes bugs when resizing window)
+		try:
+			DataToOnlinePlot = self.sock.recv(1024)
+		except Exception as e:
+			return
+		try:
+			DataToOnlinePlot = DataToOnlinePlot.split(b"?")
+			for rowOfData in DataToOnlinePlot:
+				if rowOfData == b'':
+					continue
+				# If the data received is the end signal, freeze plot.
+				elif rowOfData == b"end":
+					print("Recieved end signal")
+					self.stopPlot()
+					return
+				try:
+					rowOfData = json.loads(rowOfData)
+					for key in rowOfData:
+						self.Data[key].append(rowOfData[key])
+						
+						if self.plotMethod == 2:				
+							if not key in self.y_limits:
+								self.y_limits[key] = [0,0]
+							elif rowOfData[key] < self.y_limits[key][0]:
+								self.y_limits[key][0] = rowOfData[key]
+							elif rowOfData[key] > self.y_limits[key][1]:
+								self.y_limits[key][1] = rowOfData[key]
+							#_________________________________
+					self.plotData()
+				except:
+					continue
+				# Unpack the recieved row of data
+				
+
+		except Exception as e:
+			print(e)
+			print("Data error")
+			self.stopPlot()
+			return
+		return *self.figure_list, *self.x_label_list, *self.y_label_list 
+
 	def plotData(self):
 
 		if self.plotMethod == 1:
@@ -137,7 +161,7 @@ class PlotObject:
 				subplot = lineInfo["subplot"]
 				for line in subplot.get_lines():
 					line.remove()
-				
+		
 		
 		# Håndtering av plottemetoder
 		for line in self.lines.values():
@@ -149,76 +173,29 @@ class PlotObject:
 				raise Exception("Velg plottemetode 1 eller 2")
 
 
-	def live(self,i): # i is required internally (removing this causes bugs when resizing window)
-		try:
-			self.bytesData += self.sock.recv(1024)
-		except Exception as e:
-			print(e,flush=True)
-			print("Lost connection to EV3",flush=True)
-			self.stopPlot()
-
-		try:
-			DataToOnlinePlot = self.bytesData.split(b"?")
-			self.bytesData = b""
-			for rowOfData in DataToOnlinePlot:
-				if rowOfData == b'':
-					continue
-				# If the data received is the end signal, freeze plot.
-				elif rowOfData == b"end":
-					print("Recieved end signal")
-					self.stopPlot()
-					break
-
-				try:
-					rowOfData = json.loads(rowOfData)
-					for key in rowOfData:
-						self.Data[key].append(rowOfData[key])
-						if self.plotMethod == 2:				
-							if not key in self.y_limits:
-								self.y_limits[key] = [0,0]
-							elif rowOfData[key] < self.y_limits[key][0]:
-								self.y_limits[key][0] = rowOfData[key]
-							elif rowOfData[key] > self.y_limits[key][1]:
-								self.y_limits[key][1] = rowOfData[key]
-							#_________________________________
-					
-				except json.decoder.JSONDecodeError:
-					self.bytesData += rowOfData
-
-				except Exception as e:
-					print(e,flush=True)
-					continue
-			
-			self.plotData()
-
-		except Exception as e:
-			print(e)
-			print("Data error")
-			self.stopPlot()
-			return
-		return *self.figure_list, *self.x_label_list, *self.y_label_list 
-
-
 	def stopPlot(self):
 		
 		# stop liveplot event
 		try:
-			self.livePlot.pause()
 			self.livePlot.event_source.stop()
 			self.livePlot._stop()
 		except Exception as e:
-			print(f"Error when trying to stop plot event (vanligvis ikke problem): {e}",flush=True)
+			print(f"error when trying to stop plot event{e}",flush=True)
+			pass
+		
+		sleep(0.1)
 
-
-		# clear old lines before redrawing
+		# clear canvas  and redraw canvas
 		if self.plotMethod == 1:
 			try:
 				for lineInfo in self.lines.values():
 					subplot = lineInfo["subplot"]
+					subplot.get_legend().remove()
 					for line in subplot.get_lines():
 						line.remove()
+					
 			except Exception as e:
-				print(f'stopping plot status: {e}',flush=True)
+				print(f'issues with stopping plot: {e}',flush=True)
 		
 		# Remove labels and lines from our custom storage
 		for line in self.figure_list:
@@ -233,8 +210,6 @@ class PlotObject:
 		for ylabel in self.y_label_list:
 			ylabel.remove()
 		#_______________________________________________
-
-	
 
 		for lineInfo in self.lines.values():
 			subplot         = lineInfo["subplot"]    
@@ -269,6 +244,7 @@ class PlotObject:
 					marker=marker,
 					label= str(yname),
 				)
+				
 			
 			subplot.legend(loc='upper left', frameon=False)
 			if self.plotMethod == 2:
@@ -276,17 +252,12 @@ class PlotObject:
 				subplot.tick_params(axis='y', colors='black')
 
 		if Interactivity:
-			crosshairs(xlabel="x",ylabel="y",decimals=self.desimaler) #it is important to call this last
-
-		self.window.withdraw()
-		self.plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
-	
-
+			crosshairs(xlabel="x",ylabel="y",decimals=self.desimaler) # legger til crosshair med antall desimaler spesifisert 
+		plt.show()
 		
 
-	# plotte-metode 2: Veldig rask, men ulempen er at akseverdier ikke vises
-	# har lagt til labels for å få et bedre inntrykk av x og y verdier 
-	def Blitting(self, lineInfo):
+	# PLOTTING METHODS:
+	def Blitting(self, lineInfo): # VELDIG HURTIG
 		lineId          = lineInfo["lineId"]
 		subplot         = lineInfo["subplot"]    
 		xListName       = lineInfo["xListName"]       
@@ -324,7 +295,7 @@ class PlotObject:
 				self.Mapping[subplot][lineId] = {"line": line, "y_label": y_label}
 				self.figure_list.append(line)
 				self.y_label_list.append(y_label,)
-				
+
 		if line:
 			scale_X = 1.02
 			max_x = self.Data[xListName][-1] or 0.1
@@ -346,9 +317,9 @@ class PlotObject:
 				self.Mapping[subplot]["maxX"] = max_x
 			#______________________________________
 
-			
-
+		
 			# Handle axes limits for animation
+			
 			if min_y < self.Mapping[subplot]["min"]:
 				self.Mapping[subplot]["min"] = min_y
 			else:
@@ -360,18 +331,18 @@ class PlotObject:
 				max_y = self.Mapping[subplot]["max"]
 			#__________________________________
 
-
 			# Make sure there are some leeway for the line so it doesn't hit the figure box
 			if (max_y - min_y) == 0:
-				min_y += 1e-10
-				max_y -= 1e-10
+				min_y -= 1e-10
+				max_y += 1e-10
 			dy = 0.1*(max_y-min_y)
-
+			#__________________________________________________________
 
 			dif = len(self.Data[xListName]) - len(self.Data[yListName])
-			subplot.set_xlim(self.Data[xListName][0],scale_X*max_x) #set x limit of axis    
-			subplot.set_ylim(min_y-dy,max_y+dy)
+			subplot.set_xlim(self.Data[xListName][0],scale_X*max_x) # setter x-grenser    
+			subplot.set_ylim(min_y-dy,max_y+dy)						# setter y-grenser
 
+			# I dette faget legges index bakover i tid
 			if dif > 0 :
 				line.set_data(self.Data[xListName][:-dif], self.Data[yListName])
 			else:
@@ -384,9 +355,9 @@ class PlotObject:
 			y_label.set_x(self.Data[xListName][-1])
 			y_label.set_y(self.Data[yListName][-1])
 
-	# Litt tregere plottemetode, men vi får vist frem akseverdier
+
 	def Extended(self, lineInfo):
-		
+
 		subplot         = lineInfo["subplot"]    
 		xListName       = lineInfo["xListName"]       
 		yListName       = lineInfo["yListName"]
@@ -408,7 +379,7 @@ class PlotObject:
 				linestyle=linestyle, 
 				linewidth=linewidth, 
 				marker=marker,
-				label= f"{yname}: {round(self.Data[yListName][-1],2)}"
+				label= f"{yname}: {round(self.Data[yListName][-1],20)}"
 			)
 		else:
 			subplot.plot(
@@ -418,37 +389,12 @@ class PlotObject:
 				linestyle=linestyle, 
 				linewidth=linewidth, 
 				marker=marker,
-				label= f"{yname}: {round(self.Data[yListName][-1],2)}"
+				label= f"{yname}: {round(self.Data[yListName][-1],20)}"
 			)
+
 		subplot.legend(loc='upper left', frameon=False)
 
+	# starter liveplot_event og leser socket hvert 1 ms
 	def startPlot(self):
-		
-		# Sender signal for å stoppe robot og stopper plottet
-		def signalRobot():
-			self.sock.send(b'Stop')
-			self.stopPlot()
-			
-		# bruker tkinter (standard library)
-		self.window.title("EV3 Custom Stop")
-		self.window.config(bg='#567')
-		ws = self.window.winfo_screenwidth()
-		hs = self.window.winfo_screenheight()
-		w = 250
-		h = 250
-		x = ws - (w)
-		y = hs/2 - h/2
-		self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-		button = tk.Button(self.window, text ="Stop Program!",command=signalRobot)
-		button.config(font=("Consolas",15))
-		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
-
-		# liveplot eventen som er ansvarlig for plotting.
-		self.livePlot = self.FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
-		self.plt.show(block=False)
-		self.window.mainloop()
-		self.plt.show()
-	
-if __name__ == "__main__":
-	print("kjører modulen i main thread og kjekker om pakker kan importeres")
-	pass
+		self.livePlot = FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
+		plt.show()
