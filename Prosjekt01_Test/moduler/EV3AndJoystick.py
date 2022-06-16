@@ -109,8 +109,9 @@ def infoJoystick():
 
 
 def getJoystickValues(robot):
-    print("Thread started")
+    
     # https://docs.micropython.org/en/v1.9.3/pyboard/library/uselect.html
+
     event_poll = uselect.poll()
     if robot.joystick["in_file"] is not None:
         event_poll.register(robot.joystick["in_file"], uselect.POLLIN)
@@ -136,7 +137,6 @@ def getJoystickValues(robot):
                 #print("ev_type: " + str(ev_type) + ". code: " + str(code) + ". value: " + str(value) + ".")
                 if code == 288:
                     print("Joystick signal received, stopping program.")
-                    robot.brick.speaker.beep()
                     config.joy1Instance = True
                     config.joyMainSwitch = True
                 elif code == 289:

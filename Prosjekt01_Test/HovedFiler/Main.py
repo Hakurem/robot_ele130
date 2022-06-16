@@ -22,11 +22,11 @@ _g = Bunch()
 # SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER og BEREGNINGER
 
 #++++++++++++++++++++++++++++++++++++++++++ Konfigurasjoner +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Configs.EV3_IP = "169.254.63.42"	# se ip-adressen på skjermen til ev3-roboten
+Configs.EV3_IP = "169.254.21.229"	# se ip-adressen på skjermen til ev3-roboten
 Configs.Online = True				# kjører du programmet uten robot, så er det Online=False
 Configs.runFromPC = True			# programmet kjøres fra PC (True) eller KUN fra Ev3-roboten (False) (Det vi kalte wired før)
 Configs.livePlot = True				# lar deg plotte live. Kan sette false om du ønsker mindre tids-skritt uten å måtte ta av ledning
-Configs.plotMethod = 2				# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
+Configs.plotMethod = 1				# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
 Configs.desimaler = 2 				# sett antall desimaler ved manuell markering av (x,y) verdi etter plott 
 
 Configs.filenameMeas = "measurements.txt"

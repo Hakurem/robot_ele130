@@ -57,7 +57,7 @@ def main():
         
         # make a thread to stop the ev3 from the laptop
         if "connection" in robot.__dict__:
-            print(' --> setter opp stopp-knapp til via PC')
+            print(' --> setter opp stopp-knapp via PC')
             _thread.start_new_thread(StopLoop, (robot,))  
 
      
@@ -102,6 +102,7 @@ def main():
     finally:
         stopMotors(robot)
         CloseJoystickAndEV3(robot, Configs.runFromPC)
+        robot.brick.speaker.beep()
         sys.exit()
         
 
