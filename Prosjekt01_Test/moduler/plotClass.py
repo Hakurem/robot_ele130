@@ -2,6 +2,8 @@
 # Legger til mappene i søkestien for imports bare når programmet kjører
 import os
 import sys
+
+from HovedFiler.Main import Configs
 sys.path.append(os.getcwd())
 sys.path.append(os.getcwd()+"/"+"HovedFiler")
 sys.path.append(os.getcwd()+"/"+"moduler")
@@ -24,13 +26,12 @@ except:
 
 class PlotObject:
 
-	def __init__(self, Data, Configs, sock):
+	def __init__(self, Data, Configs, sock=None):
 		self.Data = Data
 		self.sock = sock
 		self.plotMethod = Configs.plotMethod
 		self.desimaler = Configs.desimaler
 		self.bytesData = b""
-		self.sock = sock
 
 	def create(self, nrows, ncols, sharex=False):
 
@@ -205,8 +206,9 @@ class PlotObject:
 			self.livePlot.event_source.stop()
 			self.livePlot._stop()
 		except Exception as e:
-			print(f"Error when trying to stop plot event (vanligvis ikke problem): {e}",flush=True)
-
+			if Configs.Online:
+				print(f"Error when trying to stop plot event (vanligvis ikke problem): {e}",flush=True)
+				
 
 		# clear old lines before redrawing
 		if self.plotMethod == 1:
@@ -445,6 +447,9 @@ class PlotObject:
 		self.plt.show(block=False)
 		self.window.mainloop()
 		self.plt.show()
+
+
+	
 	
 if __name__ == "__main__":
 	print("kjører modulen i main thread og kjekker om pakker kan importeres")

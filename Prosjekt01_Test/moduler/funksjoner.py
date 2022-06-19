@@ -11,46 +11,61 @@ class Bunch(dict):
 
 
 # Støttes i python 3, men ikke i micropython. Mye mer funksjonalitet
+# konverterer dataobjektet bunch til denne typen når vi detekterer at vi er på PC
 class BunchPython(dict):
     def __init__(self, *args, **kwds):
         super(BunchPython, self).__init__(*args, **kwds)
         self.__dict__ = self
 
 
-
 # Konverterer tekst-variabler, 
 # henter ut verdier, formaterer til en streng og returnerer
-def EasyWrite(d,k,*variabelNavn):
-    streng = ""    
-    last_index = len(variabelNavn)-1
+sortedKeys = [] # iterering i dictionary garanterer oss ikke samme rekkefølge (vi lager rekkefølgen selv)
+def writeToFile(d,k,meas,_g):
+    d_map = d.__dict__
+    if len(sortedKeys) == 0:
+        for key in d_map:
+            sortedKeys.append(key)
+    last_index = len(sortedKeys)-1
+    streng = ""
     if k == 0:
-		# Skriv variabelnavn på første linje
-        for i,v in enumerate(variabelNavn):
-            if i == last_index:
-                streng += "{navn}\n".format(navn = v)
+        # Skriv variabelnavn på første linje og marker om dette er en måling eller beregning 
+        g_map = _g.__dict__
+        for i,v in enumerate(sortedKeys):
+            if v in meas:
+                if i == last_index:
+                    streng += "{navn}=meas\n".format(navn=v)
+                else:
+                    streng += "{navn}=meas,".format(navn=v)
             else:
-                streng += "{navn}, ".format(navn = v)
-        # lager et mellomrom
-        streng  += "\n"
+                if i == last_index:
+                    streng += "{navn}=calc\n".format(navn=v)
+                else:
+                    streng += "{navn}=calc,".format(navn=v)
 
+        # lagring av initialverider som brukes i mathcalculations
+        for i,v in enumerate(g_map):
+            value = g_map[v]
+            if i == len(g_map)-1:
+                streng += "{navn}={value}\n".format(navn=v, value=value)
+            else:
+                streng += "{navn}={value},".format(navn=v, value=value)
+      
     # Så skriver vi bare verdiene som strenger
-
-
-    for i,v in enumerate(variabelNavn):
+    for i,v in enumerate(sortedKeys):
         if i == last_index:
             try:
-                streng += str(d.__dict__[v][-1])
+                streng += str(d_map[v][-1])
             except IndexError:
                 pass
         else:
             try:
-                streng += str(d.__dict__[v][-1]) + ","
+                streng += str(d_map[v][-1]) + ","
             except IndexError:
                 streng += ","
     streng  += "\n"
     return streng
 #_________________________________________________________
-
 
 
 # Pakker sammen live målinger for plotting
@@ -92,10 +107,11 @@ def parseMeasurements(s):
 	
     
 # Pakker opp data i offline modus fra filenameMeasurement
-def unpackMeasurement(d,keys,measures):
-	for i,key in enumerate(keys):
-		if key in d:
-			d[key].append(parseMeasurements(measures[i]))
+def unpackMeasurement(d,keys,m_keys,Data):
+    for i,key in enumerate(keys):
+        if key in keys and key in m_keys:
+            d[key].append(parseMeasurements(Data[i]))
+            
 #___________________________________________________________
 
 

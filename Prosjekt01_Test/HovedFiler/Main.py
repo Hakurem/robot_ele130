@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # +++++++++++++++++++++++++++++ IKKE ENDRE ++++++++++++++++++++++++++++++++++++++++
-# Setter opp søkestier og importerer pakker (sjekker om vi er på ev3 eller på pc)
+# Setter opp midlertidige søkestier og importerer pakker (sjekker om vi er på ev3)
 import os
 import sys
 import json
@@ -15,7 +15,7 @@ from MineFunksjoner import *
 from funksjoner import *
 d = Bunch()					# dataobjektet ditt (punktum notasjon)
 Configs = Bunch()			# konfiguarsjonene dine
-_g = Bunch()				# globale variabler lagres i denne listen
+_g = Bunch()				# initalverdier kun for bruk i addmeasurement og mathcalculations 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -23,18 +23,16 @@ _g = Bunch()				# globale variabler lagres i denne listen
 # SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER og BEREGNINGER
 
 #++++++++++++++++++++++++++++++++++++++++++ Konfigurasjoner +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Configs.EV3_IP = "169.254.123.184"	# se ip-adressen på skjermen til ev3-roboten
+Configs.EV3_IP = "169.254.187.48"	# se ip-adressen på skjermen til ev3-roboten
 Configs.Online = True				# kjører du programmet uten robot, så er det Online=False
-Configs.runFromPC = True			# programmet kjøres fra PC (True) eller KUN fra Ev3-roboten (False) (Det vi kalte wired før)
-Configs.livePlot = True				# lar deg plotte live. Kan sette false om du ønsker mindre tids-skritt uten å måtte ta av ledning
+Configs.livePlot = True				# lar deg plotte live. Sett til False og få lavere tidsskritt, men ingen plott
 Configs.plotMethod = 2				# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
-Configs.desimaler = 3 				# sett antall desimaler ved manuell markering av (x,y) verdi etter plott 
+Configs.desimaler = 3 				# antall desimal for punktmarkering (om du har mplcursors eller reliability installert) 
 
-Configs.filenameMeas = "measurements.txt"
-Configs.filenameCalcOnline = "calculations.txt" 
-Configs.filenameCalcOffline = ".txt"  
+Configs.filename = "P0X_BeskrivendeTekst_Y.txt"					# Eksempel: P01_NumeriskIntegrasjon_1.txt		
+Configs.filenameOffline = "Offline_P0X_BeskrivendeTekst_Y.txt"	# Eksempel: Offline_P01_NumeriskIntegrasjon_1.txt
 
-Configs.limitMeasurements = False	# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
+Configs.limitMeasurements = True	# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -122,7 +120,7 @@ def setPorts(r, devices, port):
 # husk at målinger kommer fra avlesning av sensorene til roboten (ikke beregninger)
 # d: data  | "data-objektet" der du får take i variablene dine med punktum notasjon e.g (d.Tid)
 # r: robot | inneholder sensorer, motorer og diverse
-# _g: "globale" verdier | Du kan lagre initialverdier som kan brukes i mathcalculation
+# _g: initalverdier som settes i addMeasurements og brukes i mathcalculations
 # k: indeks som starter på 0 og øker [0,--> uendelig]
 # config: inneholder joystick målinger
 
@@ -130,12 +128,12 @@ def addMeasurements(d,r,_g,k):
 
 	if k==0:        
 		# Definer initialverdier for målinger inn i _g variabelen.
-		# Da kan du også bruke disse i mathcalculations 
+		# Disse kan også bli brukt i mathcalculations 
 		_g.start_tidspunkt = perf_counter() 			# lagrer første time_stamp
 		_g.lys_initial = r.ColorSensor.reflection() 	# lagrer første lysmåling som kan brukes til å beregne Flow
 		d.Tid.append(0)
 	else:
-		# lagrer målinger av tid
+		# lagrer "målinger" av tid
 		d.Tid.append(perf_counter() - _g.start_tidspunkt)
 	
 	# lagrer målinger av lys
@@ -180,12 +178,14 @@ def addMeasurements(d,r,_g,k):
 	"""
 #______________________________________________________
 
+
+
 # Mathcalculations (bruk målinger for å beregne og legge til nye variabler)
-def MathCalculations(d,_g,k):
+# OBS! funksjonen brukes både i online og offline.
+def MathCalculations(d,k,_g):
 	# Parametre
 	m = 3  # fir filter konstant
 	a = 0.5 # iir-filter konstant
-
 	# Initialverdi for beregnede variabler
 	if k == 0:
 		d.Flow.append(0)
@@ -234,50 +234,6 @@ def stopMotors(r):
 #__________________________________________________
 
 
-# SEKSJON 2: 
-# - Skriv målinger og beregninger til "txt" fil
-# - Send data fra ROBOT til PC for å plotte live
-# - Definer hvilke variabler du vil plotte
-# - husk at filename i configs må være et navn større enn ".txt"
-
-# Skriv målinger til fil (LIVE).
-def writeMeasToFile(d,r,k):
-	streng = EasyWrite(d,k,
-		"Tid",
-		"Lys",
-	)
-	r.measurements.write(streng)
-
-# Skriv beregning til fil (LIVE)
-def writeCalcToFile(d,r,k):
-	streng = EasyWrite(d,k,
-		"Tid",
-		"Ts",
-		"Flow",
-		"Euler"
-	)
-	r.calculations.write(streng)
-# --------------------------------------------------------
-
-
-
-# Kjører kun på PC-en i offline.
-# Leser gjennom filnameMeasurement og henter ut målinger.
-# Målingene beregnes og lagres i til fil
-def writeOfflineCalc(d, lengde):
-	streng = ""
-	with open(Configs.filenameCalcOffline, "w") as f:
-		for k in range(lengde):
-			streng += EasyWrite(d,k,
-				"Tid",
-				"Ts",
-				"Flow",
-				"Euler"
-			)
-		f.write(streng)
-#_______________________________________________________________________
-
-
 
 # Om du har satt True på runFromPC, livePlot og Online, så får du live målinger fra ROBOTEN til PC
 # vil gi litt tregere tidsskritt enn om livePlot = False (som da ikke viser noe plot)
@@ -294,6 +250,8 @@ def SendLiveData(data,robot):
 	robot.connection.send(bytes(msg, "utf-8") + b"?") # Sender målinger fra Ev3 til PC-en din
 	#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
+# SEKSJON 2 PLOTTING AV DATA
 
 # Dersom nrows og ncols = 1, så har du bare ax.
 # Dersom enten nrows = 1 eller ncols = 1, så gis ax 1 argument som ax[0], ax[1], osv.
@@ -333,8 +291,8 @@ def lagPlot(plt):
 		marker          = "",       # legg til markør på hvert punkt (anbefales for det meste ikke)
 
 		# VALGFRITT 2: Ekstra argumenter som kan brukes ved valg av plottemetode 2
-		xname			= "🕒",	# navn på animerte x-verdien
-		yname			= "💡",	# navn på animerte y-verdien
+		xname			= "tid i sekunder",	# navn på animerte x-verdien
+		yname			= "flow-målinger",	# navn på animerte y-verdien
 		ycolor			= "k",	# farge på animerte y-verdien
 	)
 
@@ -344,10 +302,10 @@ def lagPlot(plt):
 		yListName       = "Euler",
 	)
 
-
 	plt.plot(
 		subplot         = ax[1,0],    
 		xListName       = "Tid",       
 		yListName       = "Ts",
 	)
+
 #______________________________________ FERDIG _______________________________________________

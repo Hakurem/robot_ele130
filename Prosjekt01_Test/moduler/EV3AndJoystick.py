@@ -17,7 +17,7 @@ import uselect
 import config
 
 
-def Initialize(runFromPC, filenameMeas, filenameCalcOnline):
+def Initialize(filename):
     
 
     # robot inneholder all info om roboten
@@ -28,32 +28,27 @@ def Initialize(runFromPC, filenameMeas, filenameCalcOnline):
     # joystick inneholder all info om joysticken.
     robot.joystick = infoJoystick()
     
-    if runFromPC:
+    
+    # Sett opp socketobjektet, og hør etter for "connection"
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    robot.sock = sock
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(("", 8070))
+    sock.listen(1)
 
-        # Sett opp socketobjektet, og hør etter for "connection"
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        robot.sock = sock
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(("", 8070))
-        sock.listen(1)
+    # Gi et pip fra robotten samt print i terminal
+    # for å vise at den er klar for socketkobling fra PC
+    print("Waiting for connection from computer.")
+    #ev3.speaker.beep()
 
-        # Gi et pip fra robotten samt print i terminal
-        # for å vise at den er klar for socketkobling fra PC
-        print("Waiting for connection from computer.")
-        print("Starter ikke programmet etter noen sekunder kan det hende at ip-adressen er endret")
-        #ev3.speaker.beep()
+    # Motta koblingen og send tilbake "acknowledgment" som byte
+    connection, _ = sock.accept()
+    connection.send(b"ack")
+    print("Acknowlegment sent to computer.")
+    robot.connection = connection
 
-        # Motta koblingen og send tilbake "acknowledgment" som byte
-        connection, _ = sock.accept()
-        connection.send(b"ack")
-        print("Acknowlegment sent to computer.")
-        robot.connection = connection
-
-    # Fila hvor målingene lagres
-    robot.measurements = open(filenameMeas, "w")
-    # Fila hvor beregnede data lagres
-    robot.calculations = open(filenameCalcOnline, "w")
-
+    # Fila hvor alle dataene dine lagres
+    robot.dataToFile = open(filename, "w")
     return robot
 
 
@@ -218,18 +213,16 @@ def getJoystickValues(robot):
 
 
 
-def CloseJoystickAndEV3(robot, runFromPC):  
+def CloseJoystickAndEV3(robot):  
     if  robot.joystick["in_file"] != None:
         robot.joystick["in_file"].close()
    
     
-    robot.measurements.close()
-    robot.calculations.close()
+    robot.dataToFile.close()
 
-    if runFromPC:
-        robot.connection.send(b"end")
-        robot.connection.close()
-        robot.sock.close()
+    robot.connection.send(b"end")
+    robot.connection.close()
+    robot.sock.close()
 
 
 

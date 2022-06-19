@@ -1,19 +1,20 @@
 #!/usr/bin/env pybricks-micropython
 # coding=utf-8
 
-# Legger til mappene i søkestien for imports bare når programmet kjører
+# Legger til mappene i søkestien midlertidig for imports bare når programmet kjører
 import os
 import sys
 import _thread
+from time import sleep
 p_root = os.getcwd() #root of project
 sys.path.append(p_root)
 sys.path.append(p_root+"/"+"HovedFiler")
 sys.path.append(p_root+"/"+"moduler")
 #_______________________________________________________
 
-
 import config
-from Main import Configs, d, _g, setPorts, addMeasurements, MathCalculations, writeMeasToFile, writeCalcToFile, SendLiveData, setMotorPower, stopMotors
+from Main import Configs, d, _g, setPorts, addMeasurements, MathCalculations, SendLiveData, setMotorPower, stopMotors
+from funksjoner import writeToFile
 try:
     from EV3AndJoystick import *
     from pybricks.parameters import Port
@@ -40,18 +41,31 @@ def limit_measurements(d, k):
     max_values = 1000 # how many values to save on ev3
     if k >= max_values:
         k = max_values-1
-        for key in d:
-            if len(d[key]) > max_values: # make sure lists are not empty 
-                d[key].pop(0) # runs at O(n), but neglishable since n = max_values --> O(1)
+        g_map = d.__dict__
+        for key in g_map:
+            if len(g_map[key]) > max_values: # make sure lists are not empty
+                g_map[key].pop(0) # runs at O(n), but neglishable since n = max_values --> O(1)
     return k
 #-----------------------------
 
 def main():
     try:
-        robot = Initialize(Configs.runFromPC, Configs.filenameMeas, Configs.filenameCalcOnline)
+        robot = Initialize(Configs.filename)
         setPorts(robot,devices,Port)
+
+        # initialize plot before starting main loop
+        # we wish to visualize everything from the start
+        while True:
+            msg = robot.connection.recv(1024)
+            print(msg)
+            if msg == b"Done_Initializing_Plot":
+                sleep(0.5)
+                break
+        #____________________________________________
+
+        # make a thread to stop ev3 from joystick
         if robot.joystick["in_file"] is not None:
-            _thread.start_new_thread(getJoystickValues, [robot]) # make a thread to stop ev3 from joystick
+            _thread.start_new_thread(getJoystickValues, [robot]) 
         else:
             print(" --> Joystick er ikke koplet til")
         
@@ -61,23 +75,30 @@ def main():
             _thread.start_new_thread(StopLoop, (robot,))  
 
      
-        k = 0
-        while True:
+        
 
+        k = 0
+        meas = {}
+        while True:
             addMeasurements(d,robot,_g,k) # just use k to check if we are at k=0 or k>0
 
-            if len(Configs.filenameMeas)>4:
-                writeMeasToFile(d,robot,k)
-            
-            MathCalculations(d,_g,k)
-
-            if len(Configs.filenameCalcOnline)>4:
-                writeCalcToFile(d,robot,k)
+            # figure out which values are measurements and mark them in the txt_file
+            if k == 0:
+                d_map = d.__dict__
+                for key in d_map:
+                    if len(d_map[key]) > 0:
+                        meas[key] = key
+            #________________________________________________________________________    
+                    
+            MathCalculations(d,k,_g)
+            if len(Configs.filename)>4:
+                streng = writeToFile(d,k,meas,_g)
+                robot.dataToFile.write(streng)
 
             setMotorPower(d,robot)
 
             # Sender live målinger og plotter
-            if Configs.runFromPC and Configs.livePlot:
+            if Configs.livePlot:
                 SendLiveData(d,robot)
             
             
@@ -90,11 +111,13 @@ def main():
             elif ProgramEnded:
                 print("Stopp knappen på PC-en ble trykket")
                 break
-            k += 1
+            
 
             # Avoid saving long lists in online mode hogging memory of ev3 and crashing
             if Configs.limitMeasurements:
                 k = limit_measurements(d,k) # will make FIR (that has m > limit) inaccurate in online mode
+
+            k += 1
 
     except MemoryError as e:
         print("\n___Status for minnebruk__")
@@ -107,7 +130,7 @@ def main():
         sys.print_exception(e)
     finally:
         stopMotors(robot)
-        CloseJoystickAndEV3(robot, Configs.runFromPC)
+        CloseJoystickAndEV3(robot)
         #robot.brick.speaker.beep()
         sys.exit()
         
@@ -117,4 +140,4 @@ if __name__ == '__main__':
     if Configs.Online:
         main()
     else:
-        raise Exception("Kan ikke kjøre robotfilen når du er i offline")
+        raise Exception("Kan ikke kjøre robotfilen når du er i offline.")

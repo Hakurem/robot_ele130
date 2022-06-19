@@ -15,7 +15,6 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-
 nrows = 1
 ncols = 1
 fig, ax = plt.subplots(nrows, ncols, sharex=False)
