@@ -3,6 +3,7 @@
 
 # Legger til mappene i søkestien for imports bare når programmet kjører
 import os
+from re import A
 import sys
 p_root = os.getcwd() #root of project
 sys.path.append(p_root)
@@ -109,7 +110,6 @@ def infoJoystick():
 def getJoystickValues(robot):
     
     # https://docs.micropython.org/en/v1.9.3/pyboard/library/uselect.html
-
     event_poll = uselect.poll()
     if robot.joystick["in_file"] is not None:
         event_poll.register(robot.joystick["in_file"], uselect.POLLIN)

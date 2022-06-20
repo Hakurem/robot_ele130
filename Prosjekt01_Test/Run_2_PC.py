@@ -106,7 +106,6 @@ def main():
         plt = PlotObject(d, Configs, sock)
         lagPlot(plt)
         sock.send(b'Done_Initializing_Plot')
-        print("sending ready signal to robot")
         plt.startPlot()
 
 

@@ -75,8 +75,6 @@ def main():
             _thread.start_new_thread(StopLoop, (robot,))  
 
      
-        
-
         k = 0
         meas = {}
         while True:

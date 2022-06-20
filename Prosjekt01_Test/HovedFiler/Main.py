@@ -23,8 +23,8 @@ _g = Bunch()				# initalverdier kun for bruk i addmeasurement og mathcalculation
 # SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER og BEREGNINGER
 
 #++++++++++++++++++++++++++++++++++++++++++ Konfigurasjoner +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Configs.EV3_IP = "169.254.187.48"	# se ip-adressen på skjermen til ev3-roboten
-Configs.Online = True				# kjører du programmet uten robot, så er det Online=False
+Configs.EV3_IP = "169.254.227.134"	# se ip-adressen på skjermen til ev3-roboten
+Configs.Online = False				# kjører du programmet uten robot, så er det Online=False
 Configs.livePlot = True				# lar deg plotte live. Sett til False og få lavere tidsskritt, men ingen plott
 Configs.plotMethod = 2				# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
 Configs.desimaler = 3 				# antall desimal for punktmarkering (om du har mplcursors eller reliability installert) 
@@ -32,7 +32,7 @@ Configs.desimaler = 3 				# antall desimal for punktmarkering (om du har mplcurs
 Configs.filename = "P0X_BeskrivendeTekst_Y.txt"					# Eksempel: P01_NumeriskIntegrasjon_1.txt		
 Configs.filenameOffline = "Offline_P0X_BeskrivendeTekst_Y.txt"	# Eksempel: Offline_P01_NumeriskIntegrasjon_1.txt
 
-Configs.limitMeasurements = True	# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
+Configs.limitMeasurements = False	# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -300,12 +300,17 @@ def lagPlot(plt):
 		subplot         = ax[0,1],    
 		xListName       = "Tid",       
 		yListName       = "Euler",
+		ycolor			= "k",
 	)
 
 	plt.plot(
 		subplot         = ax[1,0],    
 		xListName       = "Tid",       
 		yListName       = "Ts",
+		ycolor			= "r",
+
+		xname			= "valgfritt navn på x-verdi",	# navn på animerte x-verdien
+		yname			= "valgritt navn på y-verdi",	# navn på animerte y-verdien
 	)
 
 #______________________________________ FERDIG _______________________________________________

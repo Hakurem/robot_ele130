@@ -1,5 +1,6 @@
 # coding=utf-8
 # Legger til mappene i søkestien for imports bare når programmet kjører
+from distutils.command.config import config
 import os
 import sys
 
@@ -36,7 +37,7 @@ class PlotObject:
 	def create(self, nrows, ncols, sharex=False):
 
 		# Qt5Agg/QtAgg er ideelle backends (etter min mening) på mac (veldig rask og responsivt). 
-		# TkAgg og macosx er ok backends. 
+		# TkAgg og macosx er ok backends. (TkAgg ser ut som å være default backend på windows)
 		# macosx fungerer ikke med plottemetode 2
 
 		# detekterer plotte-metode 2 og prøver å skifte backend (gir status melding i konsollen)
@@ -278,6 +279,8 @@ class PlotObject:
 		if Interactivity:
 			crosshairs(xlabel="x",ylabel="y",decimals=self.desimaler) #it is important to call this last
 
+		if self.plotMethod == 2:
+			self.plt.tight_layout()
 		self.window.withdraw()
 		self.plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
 	

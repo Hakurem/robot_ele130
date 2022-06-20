@@ -20,18 +20,22 @@ class BunchPython(dict):
 
 # Konverterer tekst-variabler, 
 # henter ut verdier, formaterer til en streng og returnerer
-sortedKeys = [] # iterering i dictionary garanterer oss ikke samme rekkefølge (vi lager rekkefølgen selv)
+keyOrder = [] # iterering i dictionary garanterer oss ikke samme rekkefølge (vi lager rekkefølgen selv)
 def writeToFile(d,k,meas,_g):
+    
+    
     d_map = d.__dict__
-    if len(sortedKeys) == 0:
+    if len(keyOrder) == 0:
         for key in d_map:
-            sortedKeys.append(key)
-    last_index = len(sortedKeys)-1
+            keyOrder.append(key)
+    last_index = len(keyOrder)-1
     streng = ""
+
+
     if k == 0:
         # Skriv variabelnavn på første linje og marker om dette er en måling eller beregning 
         g_map = _g.__dict__
-        for i,v in enumerate(sortedKeys):
+        for i,v in enumerate(keyOrder):
             if v in meas:
                 if i == last_index:
                     streng += "{navn}=meas\n".format(navn=v)
@@ -52,7 +56,7 @@ def writeToFile(d,k,meas,_g):
                 streng += "{navn}={value},".format(navn=v, value=value)
       
     # Så skriver vi bare verdiene som strenger
-    for i,v in enumerate(sortedKeys):
+    for i,v in enumerate(keyOrder):
         if i == last_index:
             try:
                 streng += str(d_map[v][-1])
