@@ -11,6 +11,7 @@ sys.path.append(os.getcwd()+"/"+"HovedFiler")
 sys.path.append(os.getcwd()+"/"+"moduler")
 if sys.implementation.name.lower().find("micropython") != -1:
 	from EV3AndJoystick import *
+	import config
 from MineFunksjoner import *
 from funksjoner import *
 d = Bunch()					# dataobjektet ditt (punktum notasjon)
@@ -20,14 +21,14 @@ _g = Bunch()				# initalverdier kun for bruk i addmeasurement og mathcalculation
 
 
 
-# SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER og BEREGNINGER
+# SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER, BEREGNINGER, MOTORPÅDRAG
 
 #++++++++++++++++++++++++++++++++++++++++++ Konfigurasjoner +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Configs.EV3_IP = "169.254.227.134"	# se ip-adressen på skjermen til ev3-roboten
-Configs.Online = False				# kjører du programmet uten robot, så er det Online=False
-Configs.livePlot = True				# lar deg plotte live. Sett til False og få lavere tidsskritt, men ingen plott
-Configs.plotMethod = 2				# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
-Configs.desimaler = 3 				# antall desimal for punktmarkering (om du har mplcursors eller reliability installert) 
+Configs.EV3_IP = "169.254.151.11"		# se ip-adressen på skjermen til ev3-roboten
+Configs.Online = False					# kjører du programmet uten robot, så er det Online=False
+Configs.livePlot = False				# lar deg plotte live. Sett til False og få lavere tidsskritt, men ingen plott
+Configs.plotMethod = 1					# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
+Configs.desimaler = 3 					# antall desimal for punktmarkering (om du har mplcursors eller reliability installert) 
 
 Configs.filename = "P0X_BeskrivendeTekst_Y.txt"					# Eksempel: P01_NumeriskIntegrasjon_1.txt		
 Configs.filenameOffline = "Offline_P0X_BeskrivendeTekst_Y.txt"	# Eksempel: Offline_P01_NumeriskIntegrasjon_1.txt
@@ -120,9 +121,10 @@ def setPorts(r, devices, port):
 # husk at målinger kommer fra avlesning av sensorene til roboten (ikke beregninger)
 # d: data  | "data-objektet" der du får take i variablene dine med punktum notasjon e.g (d.Tid)
 # r: robot | inneholder sensorer, motorer og diverse
-# _g: initalverdier som settes i addMeasurements og brukes i mathcalculations
+# _g: initalverdier som settes i addMeasurements ved k==0 og kan også brukes i mathcalculations
 # k: indeks som starter på 0 og øker [0,--> uendelig]
 # config: inneholder joystick målinger
+# VIKTIG: Må bare inneholde målinger og første måling må være tilstede i listen når k == 0
 
 def addMeasurements(d,r,_g,k):
 
@@ -235,6 +237,9 @@ def stopMotors(r):
 
 
 
+
+# SEKSJON 2 SEND DATA OG PLOTTING AV DATA
+
 # Om du har satt True på runFromPC, livePlot og Online, så får du live målinger fra ROBOTEN til PC
 # vil gi litt tregere tidsskritt enn om livePlot = False (som da ikke viser noe plot)
 def SendLiveData(data,robot):
@@ -250,8 +255,6 @@ def SendLiveData(data,robot):
 	robot.connection.send(bytes(msg, "utf-8") + b"?") # Sender målinger fra Ev3 til PC-en din
 	#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
-# SEKSJON 2 PLOTTING AV DATA
 
 # Dersom nrows og ncols = 1, så har du bare ax.
 # Dersom enten nrows = 1 eller ncols = 1, så gis ax 1 argument som ax[0], ax[1], osv.

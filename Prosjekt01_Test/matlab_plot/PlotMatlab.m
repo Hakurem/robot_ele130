@@ -3,7 +3,7 @@ clear all
 close all
 
 %% Navn på datafilen fra python
-filename = 'Offline_P0X_BeskrivendeTekst_Y.txt';
+filename = 'P0X_BeskrivendeTekst_Y.txt';
 
 
 %% Manipulasjon med struct og fiksing av lister
@@ -55,5 +55,8 @@ xlabel('Tid [sek]')
 ylabel('time-step')
 grid on
 hold on
+
+
+b = mean(d.Ts,"omitnan");
 
 

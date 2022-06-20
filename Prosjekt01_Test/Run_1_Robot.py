@@ -1,7 +1,7 @@
 #!/usr/bin/env pybricks-micropython
 # coding=utf-8
 
-# Legger til mappene i søkestien midlertidig for imports bare når programmet kjører
+# Legger til mappene midlertidig i søkestien
 import os
 import sys
 import _thread
@@ -55,22 +55,22 @@ def main():
 
         # initialize plot before starting main loop
         # we wish to visualize everything from the start
-        while True:
-            msg = robot.connection.recv(1024)
-            print(msg)
-            if msg == b"Done_Initializing_Plot":
-                sleep(0.5)
-                break
+        if Configs.livePlot:
+            while True:
+                msg = robot.connection.recv(1024)
+                if msg == b"Done_Initializing_Plot":
+                    sleep(0.1)
+                    break
         #____________________________________________
 
         # make a thread to stop ev3 from joystick
-        if robot.joystick["in_file"] is not None:
+        if Configs.livePlot and robot.joystick["in_file"] is not None:
             _thread.start_new_thread(getJoystickValues, [robot]) 
         else:
             print(" --> Joystick er ikke koplet til")
         
         # make a thread to stop the ev3 from the laptop
-        if "connection" in robot.__dict__:
+        if Configs.livePlot and "connection" in robot.__dict__:
             print(' --> setter opp stopp-knapp via PC')
             _thread.start_new_thread(StopLoop, (robot,))  
 
@@ -129,7 +129,7 @@ def main():
     finally:
         stopMotors(robot)
         CloseJoystickAndEV3(robot)
-        #robot.brick.speaker.beep()
+        robot.brick.speaker.beep()
         sys.exit()
         
 
@@ -138,4 +138,5 @@ if __name__ == '__main__':
     if Configs.Online:
         main()
     else:
+        print("MÅ VÆRE I ONLINE FOR Å KJØRE DENNE FILEN")
         raise Exception("Kan ikke kjøre robotfilen når du er i offline.")

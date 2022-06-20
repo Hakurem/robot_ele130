@@ -97,9 +97,10 @@ def main():
 
         except Exception as e:
             print("\n____________Error was caught________________________")
-            print("Possible mistakes")
-            print('Did you try to run it in offline with online on?')
+            print("Mulige feil")
+            print('Did you mean to run this file offline but has online=True?')
             print("Did you run this file without running Run_1_Robot.py before?")
+            print("Did you ip-address change?")
             print(e)
             sys.exit()
         

@@ -3,7 +3,6 @@
 
 # Legger til mappene i søkestien for imports bare når programmet kjører
 import os
-from re import A
 import sys
 p_root = os.getcwd() #root of project
 sys.path.append(p_root)

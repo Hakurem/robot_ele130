@@ -1,9 +1,7 @@
 # coding=utf-8
 # Legger til mappene i søkestien for imports bare når programmet kjører
-from distutils.command.config import config
 import os
 import sys
-
 from HovedFiler.Main import Configs
 sys.path.append(os.getcwd())
 sys.path.append(os.getcwd()+"/"+"HovedFiler")
@@ -30,8 +28,7 @@ class PlotObject:
 	def __init__(self, Data, Configs, sock=None):
 		self.Data = Data
 		self.sock = sock
-		self.plotMethod = Configs.plotMethod
-		self.desimaler = Configs.desimaler
+		self.Configs = Configs
 		self.bytesData = b""
 
 	def create(self, nrows, ncols, sharex=False):
@@ -42,7 +39,7 @@ class PlotObject:
 
 		# detekterer plotte-metode 2 og prøver å skifte backend (gir status melding i konsollen)
 		print("\n___Status for plotting___",flush=True)
-		if  matplotlib.get_backend().lower() == "macosx": #self.plotMethod == 2 and
+		if  matplotlib.get_backend().lower() == "macosx": #Configs.plotMethod == 2 and
 			backends = ["Qt5Agg","QtAgg","TkAgg"]
 			success=0
 			for b in backends:
@@ -61,12 +58,12 @@ class PlotObject:
 		self.plt = plt
 		self.FuncAnimation = FuncAnimation
 		print(f"Bruker backend {matplotlib.get_backend().lower()} for plotting",flush=True)
-		if matplotlib.get_backend().lower() == "macosx" and self.plotMethod == 2:
+		if matplotlib.get_backend().lower() == "macosx" and Configs.plotMethod == 2:
 			print("macosx backend støtter ikke plottemetode 2!",flush=True)
 		print("___________________________\n",flush=True)
 		#__________________________________________________________________
-
-		self.window = tk.Tk()
+		if Configs.Online and Configs.livePlot:
+			self.window = tk.Tk()
 		self.nrows = nrows
 		self.ncols = ncols
 		self.fig, self.ax = plt.subplots(nrows, ncols, sharex=sharex)
@@ -88,7 +85,7 @@ class PlotObject:
 
 		for subplot in iterator:
 			
-			if self.plotMethod == 2:
+			if Configs.plotMethod == 2:
 				subplot.tick_params(axis='x', colors='white') 
 				subplot.tick_params(axis='y', colors='white')
 
@@ -132,7 +129,7 @@ class PlotObject:
 	
 	def plotData(self):
 
-		if self.plotMethod == 1:
+		if Configs.plotMethod == 1:
 			for lineInfo in self.lines.values():
 				subplot = lineInfo["subplot"]
 				for line in subplot.get_lines():
@@ -141,9 +138,9 @@ class PlotObject:
 		
 		# Håndtering av plottemetoder
 		for line in self.lines.values():
-			if self.plotMethod == 1:
+			if Configs.plotMethod == 1:
 				self.Extended(line)
-			elif self.plotMethod == 2:
+			elif Configs.plotMethod == 2:
 				self.Blitting(line)
 			else:
 				raise Exception("Velg plottemetode 1 eller 2")
@@ -173,7 +170,7 @@ class PlotObject:
 					rowOfData = json.loads(rowOfData)
 					for key in rowOfData:
 						self.Data[key].append(rowOfData[key])
-						if self.plotMethod == 2:				
+						if Configs.plotMethod == 2:				
 							if not key in self.y_limits:
 								self.y_limits[key] = [rowOfData[key],rowOfData[key]]
 							elif rowOfData[key] < self.y_limits[key][0]:
@@ -212,7 +209,7 @@ class PlotObject:
 				
 
 		# clear old lines before redrawing
-		if self.plotMethod == 1:
+		if Configs.plotMethod == 1:
 			try:
 				for lineInfo in self.lines.values():
 					subplot = lineInfo["subplot"]
@@ -272,16 +269,17 @@ class PlotObject:
 				)
 			
 			subplot.legend(loc='upper left', frameon=False)
-			if self.plotMethod == 2:
+			if Configs.plotMethod == 2:
 				subplot.tick_params(axis='x', colors='black') 
 				subplot.tick_params(axis='y', colors='black')
 
 		if Interactivity:
-			crosshairs(xlabel="x",ylabel="y",decimals=self.desimaler) #it is important to call this last
+			crosshairs(xlabel="x",ylabel="y",decimals=Configs.desimaler) #it is important to call this last
 
-		if self.plotMethod == 2:
+		if Configs.plotMethod == 2:
 			self.plt.tight_layout()
-		self.window.withdraw()
+		if Configs.Online and Configs.livePlot:
+			self.window.withdraw()
 		self.plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
 	
 
@@ -426,29 +424,40 @@ class PlotObject:
 
 	def startPlot(self):
 		
-		# Sender signal for å stoppe robot og stopper plottet
-		def signalRobot():
-			self.sock.send(b'Stop')
-			self.stopPlot()
-			
-		# bruker tkinter (standard library)
-		self.window.title("EV3 Custom Stop")
-		self.window.config(bg='#567')
-		ws = self.window.winfo_screenwidth()
-		hs = self.window.winfo_screenheight()
-		w = 250
-		h = 250
-		x = ws - (w)
-		y = hs/2 - h/2
-		self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
-		button = tk.Button(self.window, text ="Stop Program!",command=signalRobot)
-		button.config(font=("Consolas",15))
-		button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
+		if Configs.Online and Configs.livePlot:
+			# Sender signal for å stoppe robot og stopper plottet
+			def signalRobot():
+				self.sock.send(b'Stop')
+				self.stopPlot()
+				
+			# bruker tkinter (standard library)
+			self.window.title("EV3 Custom Stop")
+			self.window.config(bg='#567')
+			ws = self.window.winfo_screenwidth()
+			hs = self.window.winfo_screenheight()
+			w = 250
+			h = 250
+			x = ws - (w)
+			y = hs/2 - h/2
+			self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+			button = tk.Button(self.window, text ="Stop Program!",command=signalRobot)
+			button.config(font=("Consolas",15))
+			button.place(relx=.5, rely=.5, anchor="center", width = 200, height = 200)
 
 		# liveplot eventen som er ansvarlig for plotting.
 		self.livePlot = self.FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
-		self.plt.show(block=False)
-		self.window.mainloop()
+		if Configs.Online and Configs.livePlot:
+			self.plt.show(block=False)
+			self.window.mainloop()
+		
+		elif Configs.Online and not Configs.livePlot:
+			print("\n___programmet har startet___")
+			print("Your program is running now with livePlot==False.")
+			print("Dette er et alternativ til non-wire som gir lavere tidsskritt")
+			print("__________________________________________")
+			while True:
+				pass
+
 		self.plt.show()
 
 
