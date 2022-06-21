@@ -24,16 +24,16 @@ _g = Bunch()				# initalverdier kun for bruk i addmeasurement og mathcalculation
 # SEKSJON 1: KONFIGURASJON, VARIABLER, SENSORER, MÅLINGER, BEREGNINGER, MOTORPÅDRAG
 
 #++++++++++++++++++++++++++++++++++++++++++ Konfigurasjoner +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Configs.EV3_IP = "169.254.151.11"		# se ip-adressen på skjermen til ev3-roboten
+Configs.EV3_IP = "169.254.164.249"		# se ip-adressen på skjermen til ev3-roboten
 Configs.Online = False					# kjører du programmet uten robot, så er det Online=False
 Configs.livePlot = False				# lar deg plotte live. Sett til False og få lavere tidsskritt, men ingen plott
-Configs.plotMethod = 1					# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
-Configs.desimaler = 3 					# antall desimal for punktmarkering (om du har mplcursors eller reliability installert) 
+Configs.plotMethod = 2					# (1,2) mulige metoder å plotte på (hver med sine fordeler og ulemper).
+Configs.desimaler = 3 					# antall desimal for punktmarkering (om du har reliability pakken installert) 
 
 Configs.filename = "P0X_BeskrivendeTekst_Y.txt"					# Eksempel: P01_NumeriskIntegrasjon_1.txt		
 Configs.filenameOffline = "Offline_P0X_BeskrivendeTekst_Y.txt"	# Eksempel: Offline_P01_NumeriskIntegrasjon_1.txt
-
-Configs.limitMeasurements = False	# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
+Configs.plotBackend = ""				# qt5agg, qtagg, tkagg, macosx. Ønsker du spesifikt å bruke end backend, skriv den her
+Configs.limitMeasurements = False		# mulighet å kjøre programmet lenge uten at roboten kræsjer pga minnet (kommer selvsagt med ulemper)
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -47,6 +47,13 @@ d.Ts = []             # beregning av tidsskritt
 d.Flow = []           # beregning som bruker målingen lys og trekker fra første lysmåling (normalisering)
 d.Euler = []   		  # beregninger av numerisk integrasjon ved Euler metode
 
+d.a = []
+d.b = []
+d.c = []
+d.d = []
+d.e = []
+d.f = []
+d.g = []
 
 """
 d.LysDirekte = []         # måling av lys direkte inn fra ColorSensor
@@ -141,6 +148,9 @@ def addMeasurements(d,r,_g,k):
 	# lagrer målinger av lys
 	d.Lys.append(r.ColorSensor.reflection())
 	
+	d.a.append("False")
+	d.b.append("True")
+	d.c.append("asdjasidji")
 
 	"""
 	d.LysDirekte.append(r.ColorSensor.ambient())

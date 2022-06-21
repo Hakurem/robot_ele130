@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 # Legger til mappene midlertidig i søkestien for imports til programmet slutter
 import os
 import sys
@@ -76,43 +76,52 @@ def offline():
 
 # Setup sockets
 def main():
-    if Configs.Online:
-       
-        # If online, setup socket object and connect to EV3.
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            addr = (Configs.EV3_IP, 8070)
-            print("Attempting to connect to {}".format(addr))
-            print("Starter ikke programmet etter noen sekunder kan det hende at ip-adressen er endret")
-            sock.connect(addr)
-            DataToOnlinePlot = sock.recv(1024)
-            if DataToOnlinePlot == b"ack":
-                print("Connection established for plotting")
-            else:
-                print("no ack")
-                sys.exit()
-        except socket.timeout:
-            print("failed (sjekk om IP addressen er forandret)")
+    # If online, setup socket object and connect to EV3.
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        addr = (Configs.EV3_IP, 8070)
+        print("Attempting to connect to {}".format(addr))
+        print("Starter ikke programmet etter noen sekunder kan det hende at ip-adressen er endret")
+        sock.connect(addr)
+        DataToOnlinePlot = sock.recv(1024)
+        if DataToOnlinePlot == b"ack":
+            print("Connection established for plotting")
+        else:
+            print("no ack")
             sys.exit()
+    except socket.timeout:
+        print("failed (sjekk om IP addressen er forandret)")
+        sys.exit()
 
-        except Exception as e:
-            print("\n____________Error was caught________________________")
-            print("Mulige feil")
-            print('Did you mean to run this file offline but has online=True?')
-            print("Did you run this file without running Run_1_Robot.py before?")
-            print("Did you ip-address change?")
-            print(e)
-            sys.exit()
-        
+    except Exception as e:
+        print("\n____________Error was caught________________________")
+        print("Possible errors to help you debug")
+        print('Did you mean to run this file offline but has online=True?')
+        print("Did you run this file without running Run_1_Robot.py before?")
+        print("Did you ip-address change?")
+        print(e)
+        sys.exit()
+    
+    msg = sock.recv(1024)
+    if msg == b"joystick":
+        print('Stoppknapp: skyte-knappen, joystikken')
+        plt = PlotObject(d, Configs, sock, False)
+    else:
+        print('Stoppknapp: se skjermen')
         plt = PlotObject(d, Configs, sock)
-        lagPlot(plt)
-        sock.send(b'Done_Initializing_Plot')
-        plt.startPlot()
+    lagPlot(plt)
+    sock.send(b'Done_Initializing_Plot')
+    plt.startPlot()
 
 
 if __name__=="__main__":
     if Configs.Online:
+        print('___________________________')
+        print("Calculate with Online=True")
+        print('___________________________')
         main()
     else:
-        print("Calculate in Offline")
+        print('___________________________')
+        print("Calculate with Online=False")
+        print('___________________________')
         offline()

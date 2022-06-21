@@ -17,7 +17,7 @@ import uselect
 import config
 
 
-def Initialize(filename):
+def Initialize(Configs):
     
 
     # robot inneholder all info om roboten
@@ -28,27 +28,27 @@ def Initialize(filename):
     # joystick inneholder all info om joysticken.
     robot.joystick = infoJoystick()
     
-    
-    # Sett opp socketobjektet, og hør etter for "connection"
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    robot.sock = sock
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("", 8070))
-    sock.listen(1)
+    if Configs.livePlot:
+        # Sett opp socketobjektet, og hør etter for "connection"
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        robot.sock = sock
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("", 8070))
+        sock.listen(1)
 
-    # Gi et pip fra robotten samt print i terminal
-    # for å vise at den er klar for socketkobling fra PC
-    print("Waiting for connection from computer.")
-    #ev3.speaker.beep()
+        # Gi et pip fra robotten samt print i terminal
+        # for å vise at den er klar for socketkobling fra PC
+        print("Waiting for connection from computer.")
+        #ev3.speaker.beep()
 
-    # Motta koblingen og send tilbake "acknowledgment" som byte
-    connection, _ = sock.accept()
-    connection.send(b"ack")
-    print("Acknowlegment sent to computer.")
-    robot.connection = connection
+        # Motta koblingen og send tilbake "acknowledgment" som byte
+        connection, _ = sock.accept()
+        connection.send(b"ack")
+        print("Acknowlegment sent to computer.")
+        robot.connection = connection
 
     # Fila hvor alle dataene dine lagres
-    robot.dataToFile = open(filename, "w")
+    robot.dataToFile = open(Configs.filename, "w")
     return robot
 
 
@@ -212,16 +212,17 @@ def getJoystickValues(robot):
 
 
 
-def CloseJoystickAndEV3(robot):  
+def CloseJoystickAndEV3(robot,Configs):  
     if  robot.joystick["in_file"] != None:
         robot.joystick["in_file"].close()
    
     
     robot.dataToFile.close()
-
-    robot.connection.send(b"end")
-    robot.connection.close()
-    robot.sock.close()
+    
+    if Configs.livePlot:
+        robot.connection.send(b"end")
+        robot.connection.close()
+        robot.sock.close()
 
 
 

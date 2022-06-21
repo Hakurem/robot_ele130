@@ -1,5 +1,5 @@
 #!/usr/bin/env pybricks-micropython
-# coding=utf-8
+# -*- coding: utf-8 -*-
 
 # Legger til mappene midlertidig i søkestien
 import os
@@ -50,31 +50,50 @@ def limit_measurements(d, k):
 
 def main():
     try:
-        robot = Initialize(Configs.filename)
+        robot = Initialize(Configs)
         setPorts(robot,devices,Port)
 
-        # initialize plot before starting main loop
-        # we wish to visualize everything from the start
+
+        # Setter opp joystick eller gui knapp
         if Configs.livePlot:
-            while True:
-                msg = robot.connection.recv(1024)
-                if msg == b"Done_Initializing_Plot":
-                    sleep(0.1)
-                    break
+            stop_type = ""
+            if robot.joystick["in_file"] is not None:
+                print(' --> setter opp stopp-knapp med joystick')
+                stop_type = "joystick"
+                robot.connection.send(b"joystick")
+                
+            elif "connection" in robot.__dict__:
+                print(' --> setter opp stopp-knapp via PC')
+                stop_type = "gui"
+                robot.connection.send(b"gui")
+                
+            robot.connection.recv(1024)
+            if stop_type == "joystick":
+                _thread.start_new_thread(getJoystickValues, [robot])
+            elif stop_type == "gui":
+                _thread.start_new_thread(StopLoop, (robot,))
+
         #____________________________________________
 
-        # make a thread to stop ev3 from joystick
-        if Configs.livePlot and robot.joystick["in_file"] is not None:
-            _thread.start_new_thread(getJoystickValues, [robot]) 
-        else:
-            print(" --> Joystick er ikke koplet til")
-        
-        # make a thread to stop the ev3 from the laptop
-        if Configs.livePlot and "connection" in robot.__dict__:
-            print(' --> setter opp stopp-knapp via PC')
-            _thread.start_new_thread(StopLoop, (robot,))  
 
-     
+
+        if not Configs.livePlot:
+            robot.brick.speaker.set_volume(2, which='Beep')
+            print("\n___________STATUS_____________")
+            print('Running with livePlot = False')
+            print('begins in: 3')
+            robot.brick.speaker.play_notes(['A3/4'])
+            sleep(0.1)
+            print('begins in: 2')
+            robot.brick.speaker.play_notes(['A3/4'])
+            sleep(0.1)
+            print('begins in: 1')
+            robot.brick.speaker.play_notes(['A3/4'])
+            sleep(0.1)
+            print('GO!')
+            print('______________________________\n')
+            robot.brick.speaker.play_notes(['A4/4'])
+            robot.brick.speaker.set_volume(50, which='Beep')
         k = 0
         meas = {}
         while True:
@@ -120,15 +139,16 @@ def main():
     except MemoryError as e:
         print("\n___Status for minnebruk__")
         print("Det er fullt minne fordi variablene/listene dine ble for lange")
-        print("Om du ønsker å kjøre lenger, vurder å sette limitMeasurements i Configs til True")
+        print("If you wish to run for longer, set limitMeasurements in Configs to True")
         print(e)
         print("___________________________\n",)
 
     except Exception as e:
+        print('encountered unknown error in robot main thread')
         sys.print_exception(e)
     finally:
         stopMotors(robot)
-        CloseJoystickAndEV3(robot)
+        CloseJoystickAndEV3(robot,Configs)
         robot.brick.speaker.beep()
         sys.exit()
         
@@ -138,5 +158,5 @@ if __name__ == '__main__':
     if Configs.Online:
         main()
     else:
-        print("MÅ VÆRE I ONLINE FOR Å KJØRE DENNE FILEN")
-        raise Exception("Kan ikke kjøre robotfilen når du er i offline.")
+        print()
+        raise Exception("This file can only be run when Online=True")

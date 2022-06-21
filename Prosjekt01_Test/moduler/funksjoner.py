@@ -25,13 +25,11 @@ def writeToFile(d,k,meas,_g):
     
     
     d_map = d.__dict__
-    if len(keyOrder) == 0:
+    if k == 0:
         for key in d_map:
             keyOrder.append(key)
     last_index = len(keyOrder)-1
     streng = ""
-
-
     if k == 0:
         # Skriv variabelnavn på første linje og marker om dette er en måling eller beregning 
         g_map = _g.__dict__
@@ -47,7 +45,7 @@ def writeToFile(d,k,meas,_g):
                 else:
                     streng += "{navn}=calc,".format(navn=v)
 
-        # lagring av initialverider som brukes i mathcalculations
+        # lagring av initialverdier som brukes i mathcalculations
         for i,v in enumerate(g_map):
             value = g_map[v]
             if i == len(g_map)-1:
@@ -59,12 +57,14 @@ def writeToFile(d,k,meas,_g):
     for i,v in enumerate(keyOrder):
         if i == last_index:
             try:
-                streng += str(d_map[v][-1])
+                value = d_map[v][-1]
+                streng += str(value)
             except IndexError:
                 pass
         else:
             try:
-                streng += str(d_map[v][-1]) + ","
+                value = d_map[v][-1]
+                streng += str(value) + ","
             except IndexError:
                 streng += ","
     streng  += "\n"
@@ -107,7 +107,7 @@ def parseMeasurements(s):
         return float(s)
     except ValueError:
         pass
-    return s
+    return s.strip()
 	
     
 # Pakker opp data i offline modus fra filenameMeasurement

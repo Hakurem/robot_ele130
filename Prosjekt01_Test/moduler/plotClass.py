@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 # Legger til mappene i søkestien for imports bare når programmet kjører
 import os
 import sys
@@ -25,10 +25,11 @@ except:
 
 class PlotObject:
 
-	def __init__(self, Data, Configs, sock=None):
+	def __init__(self, Data, Configs, sock=None, gui=True):
 		self.Data = Data
 		self.sock = sock
 		self.Configs = Configs
+		self.gui = gui
 		self.bytesData = b""
 
 	def create(self, nrows, ncols, sharex=False):
@@ -39,30 +40,36 @@ class PlotObject:
 
 		# detekterer plotte-metode 2 og prøver å skifte backend (gir status melding i konsollen)
 		print("\n___Status for plotting___",flush=True)
-		if  matplotlib.get_backend().lower() == "macosx": #Configs.plotMethod == 2 and
-			backends = ["Qt5Agg","QtAgg","TkAgg"]
-			success=0
-			for b in backends:
-				try:
-					matplotlib.use(b)
-					print(f"plottemetode 2 er valgt. Byttet backend fra macosx til {b}",flush=True)
-					success=1
-					break
-				except:
-					pass
-			if not success:
-				print("VIKTIG: Vennligst velg plottemetode 1. les mer her: https://matplotlib.org/3.5.0/users/explain/backends.html")
-				print("klarte ikke bytte backend fra macosx ved valg av plottemetode 2",flush=True)
+		try:
+			matplotlib.use(Configs.plotBackend)
+			print(f"The student has chosen backend {Configs.plotBackend}",flush=True)
+		except:
+			if  matplotlib.get_backend().lower() == "macosx": #Configs.plotMethod == 2 and
+				backends = ["Qt5Agg","QtAgg","TkAgg"]
+				success=0
+				for b in backends:
+					try:
+						matplotlib.use(b)
+						print(f"Switching backend from macosx to {b}",flush=True)
+						success=1
+						break
+					except:
+						pass
+				if not success:
+					print("Important: Please choose plot-method 1. read more here: https://matplotlib.org/3.5.0/users/explain/backends.html",flush=True)
+					print("Failed to switch backend from macosx",flush=True)
 		import matplotlib.pyplot as plt
 		from matplotlib.animation import FuncAnimation
 		self.plt = plt
 		self.FuncAnimation = FuncAnimation
-		print(f"Bruker backend {matplotlib.get_backend().lower()} for plotting",flush=True)
+		print(f"Using backend {matplotlib.get_backend().lower()} for plotting",flush=True)
 		if matplotlib.get_backend().lower() == "macosx" and Configs.plotMethod == 2:
-			print("macosx backend støtter ikke plottemetode 2!",flush=True)
+			print("macosx backend does not support plot-method 2!",flush=True)
 		print("___________________________\n",flush=True)
 		#__________________________________________________________________
-		if Configs.Online and Configs.livePlot:
+
+
+		if Configs.Online and self.gui:
 			self.window = tk.Tk()
 		self.nrows = nrows
 		self.ncols = ncols
@@ -183,6 +190,7 @@ class PlotObject:
 					self.bytesData += rowOfData
 
 				except Exception as e:
+					print('unknown error')
 					print(e,flush=True)
 					continue
 			
@@ -205,7 +213,7 @@ class PlotObject:
 			self.livePlot._stop()
 		except Exception as e:
 			if Configs.Online:
-				print(f"Error when trying to stop plot event (vanligvis ikke problem): {e}",flush=True)
+				print(f"Error when trying to stop plot event (ikke problem): {e}",flush=True)
 				
 
 		# clear old lines before redrawing
@@ -278,7 +286,7 @@ class PlotObject:
 
 		if Configs.plotMethod == 2:
 			self.plt.tight_layout()
-		if Configs.Online and Configs.livePlot:
+		if Configs.Online and self.gui:
 			self.window.withdraw()
 		self.plt.pause(0) # blokkerer programmet så vi unngår at alt lukkes
 	
@@ -424,7 +432,7 @@ class PlotObject:
 
 	def startPlot(self):
 		
-		if Configs.Online and Configs.livePlot:
+		if Configs.Online and self.gui:
 			# Sender signal for å stoppe robot og stopper plottet
 			def signalRobot():
 				self.sock.send(b'Stop')
@@ -446,23 +454,13 @@ class PlotObject:
 
 		# liveplot eventen som er ansvarlig for plotting.
 		self.livePlot = self.FuncAnimation(self.fig, self.live, init_func=self.figureTitles, interval=1, blit=True)
-		if Configs.Online and Configs.livePlot:
+		if Configs.Online and self.gui:
 			self.plt.show(block=False)
 			self.window.mainloop()
-		
-		elif Configs.Online and not Configs.livePlot:
-			print("\n___programmet har startet___")
-			print("Your program is running now with livePlot==False.")
-			print("Dette er et alternativ til non-wire som gir lavere tidsskritt")
-			print("__________________________________________")
-			while True:
-				pass
-
 		self.plt.show()
 
 
 	
 	
 if __name__ == "__main__":
-	print("kjører modulen i main thread og kjekker om pakker kan importeres")
 	pass
